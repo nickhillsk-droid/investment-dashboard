@@ -91,6 +91,31 @@ tbody tr:hover{background:var(--surface-2);}
 .cc-card{background:var(--surface-1);border:0.5px solid var(--border);border-radius:8px;padding:0.8rem 1rem;}
 .lu{font-size:11px;color:var(--text-muted);margin-top:1.5rem;padding-top:1rem;border-top:0.5px solid var(--border);}
 
+/* ── CA ETF Table: Excel-style freeze panes ── */
+#ca-etf-wrapper{max-height:74vh;overflow-x:auto;overflow-y:auto;border-radius:6px;border:0.5px solid var(--border);}
+#ca-etf-table{border-collapse:separate;border-spacing:0;min-width:max-content;}
+/* Freeze header row */
+#ca-etf-table thead th{
+  position:sticky;top:0;z-index:3;
+  background:var(--surface-1);
+  box-shadow:0 2px 6px rgba(0,0,0,0.14);
+  border-bottom:2px solid var(--fill-accent);
+}
+/* Frozen column body cells */
+#ca-etf-table td.fc{position:sticky;z-index:2;background:var(--surface-0);}
+/* Frozen column header cells — both axes */
+#ca-etf-table thead th.fc{z-index:6;background:var(--surface-1);}
+/* Row hover keeps frozen cell background in sync */
+#ca-etf-table tbody tr:hover td.fc{background:var(--surface-2);}
+/* Split-line shadow on the last frozen column (Yield 2025) */
+#ca-etf-table td.fc-split,#ca-etf-table thead th.fc-split{
+  box-shadow:3px 0 10px -3px rgba(0,0,0,0.32);
+}
+#ca-etf-table thead th.fc-split{
+  box-shadow:3px 0 10px -3px rgba(0,0,0,0.32),0 2px 6px rgba(0,0,0,0.14);
+}
+/* Freeze-split marker on Yield header — accent stripe */
+#ca-etf-table thead th.freeze-split{border-right:2px solid var(--fill-accent);}
 .etf-filter-btn{padding:5px 12px;background:var(--surface-2);border:0.5px solid var(--border);border-radius:4px;cursor:pointer;font-size:11px;color:var(--text-secondary);transition:all 0.2s;}
 .etf-filter-btn.active{background:#e34948;color:white;border-color:#e34948;}
 .etf-filter-btn:hover{background:var(--fill-accent);color:white;}
@@ -466,19 +491,19 @@ tbody tr:hover{background:var(--surface-2);}
   </div>
 
   <div class="section-title" style="color:#e34948">🌍 Top 25 Global High-Yield Dividend ETFs, Stocks &amp; BDCs — Consistency + Diversity Tracker (CAD &amp; USD, Available on WS / QT / IBKR)</div>
-  <div class="table-wrapper">
+  <div class="table-wrapper" id="ca-etf-wrapper">
     <table id="ca-etf-table">
       <thead>
         <tr>
-          <th onclick="sortETF('rank')" style="min-width:32px">#</th>
-          <th onclick="sortETF('ticker')" style="min-width:90px">Ticker / $</th>
-          <th onclick="sortETF('name')" style="min-width:170px">Fund / Stock Name</th>
-          <th onclick="sortETF('region')">Region / Type</th>
-          <th onclick="sortETF('exchange')" style="min-width:65px">Exchange</th>
-          <th onclick="sortETF('provider')" style="min-width:80px">Provider</th>
-          <th style="min-width:160px">Strategy</th>
-          <th onclick="sortETF('mer')" style="min-width:70px">MER / AUM</th>
-          <th onclick="sortETF('yield')" style="min-width:75px">Yield 2025</th>
+          <th onclick="sortETF('rank')" style="min-width:36px">#</th>
+          <th onclick="sortETF('ticker')" style="min-width:100px">Ticker / $</th>
+          <th onclick="sortETF('name')" style="min-width:180px">Fund / Stock Name</th>
+          <th onclick="sortETF('region')" style="min-width:110px">Region / Type</th>
+          <th onclick="sortETF('exchange')" style="min-width:70px">Exchange</th>
+          <th onclick="sortETF('provider')" style="min-width:88px">Provider</th>
+          <th style="min-width:165px">Strategy</th>
+          <th onclick="sortETF('mer')" style="min-width:78px">MER / AUM</th>
+          <th onclick="sortETF('yield')" style="min-width:80px" class="freeze-split">Yield 2025</th>
           <th style="min-width:290px">📊 Yield Heatmap 2019→2025</th>
           <th onclick="sortETF('consistency')" style="min-width:130px">Consistency</th>
           <th onclick="sortETF('streak')" style="min-width:72px">Streak</th>
@@ -811,6 +836,43 @@ function regionBadge(r) {
   return `<span style="display:inline-block;padding:2px 6px;border-radius:3px;background:${c[r]}22;color:${c[r]};font-size:10px;font-weight:600">${map[r]||r}</span>`;
 }
 
+// ── Freeze panes: measure actual rendered widths, then pin cols 1–9 ──
+// Col 9 = Yield 2025 = the split point (matches Excel "freeze at this column")
+const FREEZE_COLS = 9;
+function applyStickyColumns() {
+  const table = document.getElementById('ca-etf-table');
+  if (!table) return;
+  const hdrRow = table.querySelector('thead tr');
+  if (!hdrRow) return;
+  const ths = Array.from(hdrRow.querySelectorAll('th'));
+
+  // Measure each header cell width to build cumulative left offsets
+  let offset = 0;
+  const lefts = ths.slice(0, FREEZE_COLS).map(th => {
+    const l = offset;
+    offset += th.getBoundingClientRect().width;
+    return l;
+  });
+
+  // Apply sticky positioning to every row (header + body)
+  table.querySelectorAll('tr').forEach(row => {
+    const isHead = !!row.closest('thead');
+    row.querySelectorAll('td, th').forEach((cell, i) => {
+      if (i < FREEZE_COLS) {
+        cell.classList.add('fc');
+        cell.style.left = lefts[i].toFixed(1) + 'px';
+        // Accent split-line on last frozen col (Yield 2025, index 8)
+        cell.classList.toggle('fc-split', i === FREEZE_COLS - 1);
+        if (isHead) cell.style.zIndex = '6';
+      } else {
+        cell.classList.remove('fc', 'fc-split');
+        cell.style.left = '';
+        if (isHead) cell.style.zIndex = '3';
+      }
+    });
+  });
+}
+
 let etfData = [...CA_DIV_ETF];
 let etfSortKey = 'rank', etfSortDir = 1;
 
@@ -851,6 +913,8 @@ function renderETF() {
     </tr>`;
   }).join('');
   document.getElementById('etf-count').textContent = `Showing ${etfData.length} funds`;
+  // Re-apply freeze panes after every render (widths may change with filtered data)
+  requestAnimationFrame(applyStickyColumns);
 }
 
 function filterETF(cat, btn) {
@@ -874,7 +938,11 @@ function sortETF(key) {
   renderETF();
 }
 
-document.addEventListener('DOMContentLoaded',()=>{renderETF();});
+document.addEventListener('DOMContentLoaded',()=>{
+  renderETF();
+  // Re-check after fonts/images settle
+  setTimeout(applyStickyColumns, 300);
+});
 
 // ══ WATCHLIST ENGINE ══
 const DB={
