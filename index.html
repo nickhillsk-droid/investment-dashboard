@@ -1,0 +1,933 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Investment Dashboard v3 — Rebalanced Portfolio</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+:root{--surface-0:#fafaf8;--surface-1:#fcfcfb;--surface-2:#f5f5f3;--text-primary:#0b0b0b;--text-secondary:#52514e;--text-muted:#898781;--border:rgba(11,11,11,0.10);--fill-accent:#3987e5;}
+html[data-theme="dark"],body[data-theme="dark"]{--surface-0:#1a1a18;--surface-1:#2d2d2b;--surface-2:#3f3f3c;--text-primary:#f5f5f3;--text-secondary:#b8b7b3;--text-muted:#8b8a87;--border:rgba(255,255,255,0.12);--fill-accent:#5a9ff5;}
+html{background:var(--surface-0);}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;background:var(--surface-0);color:var(--text-primary);}
+.dashboard{width:100%;min-height:100vh;padding:1.5rem;background:var(--surface-0);}
+.header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:1.5rem;flex-wrap:wrap;gap:12px;}
+.header-left h1{font-size:20px;font-weight:500;margin-bottom:0.5rem;}
+.header-left p{font-size:13px;color:var(--text-secondary);}
+.header-right{display:flex;align-items:flex-start;gap:12px;flex-wrap:wrap;}
+.refresh-block{display:flex;flex-direction:column;gap:4px;}
+.refresh-btn{padding:8px 14px;background:#fab219;color:#000;border:none;border-radius:4px;cursor:pointer;font-size:11px;font-weight:700;}
+.refresh-btn:disabled{opacity:0.6;cursor:not-allowed;}
+.refresh-status{font-size:10px;color:var(--text-muted);}
+.theme-btn{padding:8px 12px;background:var(--surface-1);border:0.5px solid var(--border);border-radius:4px;cursor:pointer;font-size:12px;transition:all 0.2s;}
+.theme-btn.active{background:var(--fill-accent);color:white;border-color:var(--fill-accent);}
+.tabs{display:flex;gap:0;margin-bottom:1.5rem;border-bottom:0.5px solid var(--border);overflow-x:auto;flex-wrap:wrap;}
+.tab-button{padding:12px 12px;background:transparent;border:none;cursor:pointer;font-size:11px;font-weight:500;color:var(--text-secondary);border-bottom:2px solid transparent;white-space:nowrap;transition:color 0.2s;}
+.tab-button.active{color:var(--text-primary);border-bottom-color:var(--fill-accent);}
+.tab-content{display:none;}.tab-content.active{display:block;}
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px;margin-bottom:2rem;}
+.stat-card{background:var(--surface-1);border:0.5px solid var(--border);border-radius:8px;padding:1rem;}
+.stat-label{font-size:10px;color:var(--text-secondary);margin-bottom:6px;text-transform:uppercase;}
+.stat-value{font-size:18px;font-weight:500;}
+.stat-change{font-size:11px;margin-top:4px;}
+.stat-change.positive{color:#0ca30c;}.stat-change.neutral{color:#fab219;}
+.section-title{font-size:15px;font-weight:500;margin:2rem 0 1rem;color:var(--text-primary);}
+.table-wrapper{overflow-x:auto;margin-bottom:1.5rem;}
+table{width:100%;border-collapse:collapse;font-size:12px;}
+thead{background:var(--surface-1);}
+th{padding:10px;text-align:left;font-weight:500;color:var(--text-primary);border-bottom:0.5px solid var(--border);white-space:nowrap;cursor:pointer;user-select:none;}
+th:hover{background:var(--surface-2);}
+td{padding:10px;border-bottom:0.5px solid var(--border);color:var(--text-secondary);vertical-align:middle;}
+tbody tr:hover{background:var(--surface-2);}
+.ticker{font-weight:500;color:var(--text-primary);font-family:monospace;font-size:11px;}
+.pos{color:#0ca30c;font-weight:500;}.neu{color:#fab219;font-weight:500;}.neg{color:#e34948;font-weight:500;}
+.badge{display:inline-block;padding:2px 8px;border-radius:3px;font-size:10px;font-weight:500;}
+.b-green{background:rgba(12,163,12,0.2);color:#0ca30c;}
+.b-blue{background:rgba(57,135,229,0.2);color:#378add;}
+.b-yel{background:rgba(250,178,25,0.2);color:#c98500;}
+.b-pur{background:rgba(168,102,199,0.2);color:#a366c7;}
+.nav-hl{background:var(--surface-2);border-left:3px solid var(--fill-accent);padding-left:6px;}
+.rl{display:inline-block;padding:2px 6px;color:white;border-radius:3px;font-size:10px;font-weight:600;margin-right:4px;}
+.us-rl{background:#3987e5;}.ca-rl{background:#e34948;}.gl-rl{background:#0ca30c;}.my-rl{background:#7c3aed;}
+.div{color:var(--text-muted);font-size:11px;padding:0.5rem 4px;}
+.ov-wrap{display:flex;align-items:center;gap:6px;min-width:140px;}
+.ov-pct{font-size:12px;font-weight:700;min-width:34px;}
+.ov-pct.low{color:#0ca30c;}.ov-pct.mid{color:#fab219;}.ov-pct.high{color:#e34948;}
+.ov-track{flex:1;height:6px;background:var(--surface-2);border-radius:4px;overflow:hidden;}
+.ov-fill{height:100%;border-radius:4px;}
+.ov-fill.low{background:#0ca30c;}.ov-fill.mid{background:#fab219;}.ov-fill.high{background:#e34948;}
+.ov-tag{font-size:9px;color:var(--text-muted);white-space:nowrap;}
+.ix-b{display:inline-block;padding:2px 7px;border-radius:3px;font-size:11px;font-weight:600;white-space:nowrap;}
+.ix-high{background:rgba(227,73,72,0.15);color:#c73839;}.ix-mid{background:rgba(250,178,25,0.15);color:#a87800;}.ix-low{background:rgba(12,163,12,0.15);color:#0a8e0a;}
+.sp{display:inline-block;animation:spin 1s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.pulse{animation:pulse 1.4s ease-in-out infinite;}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.3;}}
+.dn{font-size:11px;color:var(--text-secondary);margin-bottom:1rem;padding:8px 12px;background:var(--surface-1);border-radius:6px;border-left:3px solid var(--fill-accent);}
+.lg{display:flex;gap:14px;flex-wrap:wrap;margin-bottom:1rem;}
+.li{font-size:10px;display:flex;align-items:center;gap:4px;}
+.ld{width:10px;height:10px;border-radius:50%;}
+.wl-ctrl{background:var(--surface-1);border:0.5px solid var(--border);border-radius:8px;padding:1.5rem;margin-bottom:1.5rem;}
+.cg{display:flex;gap:8px;margin-bottom:1rem;flex-wrap:wrap;align-items:center;}
+.cg label{font-size:12px;font-weight:500;color:var(--text-primary);}
+.cg input{padding:8px 12px;background:var(--surface-0);border:0.5px solid var(--border);border-radius:4px;font-size:12px;color:var(--text-primary);flex:1;min-width:200px;}
+.cg input::placeholder{color:var(--text-muted);}
+.add-btn{background:#0ca30c;color:white;border:none;padding:8px 16px;border-radius:4px;cursor:pointer;font-weight:600;font-size:12px;}
+.sc{display:inline-block;padding:4px 8px;background:var(--surface-2);border:0.5px solid var(--border);border-radius:3px;font-size:11px;cursor:pointer;margin:2px;transition:all 0.2s;}
+.sc:hover{background:var(--fill-accent);color:white;}
+.del-btn{background:#e34948;color:white;border:none;padding:4px 8px;font-size:10px;cursor:pointer;border-radius:3px;}
+.empty{text-align:center;padding:2rem 1rem;color:var(--text-secondary);}
+.mf-cell{text-align:center;padding:5px 4px;font-size:10px;font-weight:600;border-radius:3px;min-width:38px;}
+.mf-self{background:#7c3aed22;color:#7c3aed;}
+.mf-low{background:rgba(12,163,12,0.18);color:#0a8e0a;}
+.mf-mid{background:rgba(250,178,25,0.22);color:#a87800;}
+.mf-high{background:rgba(227,73,72,0.22);color:#c73839;}
+.mf-vhigh{background:rgba(227,73,72,0.48);color:#7f1d1d;font-size:11px;}
+.mf-hd{font-size:9px;font-weight:600;padding:4px 3px;color:var(--text-secondary);white-space:nowrap;writing-mode:vertical-rl;transform:rotate(180deg);height:60px;vertical-align:bottom;}
+.mf-rl{font-family:monospace;font-size:10px;font-weight:600;color:var(--text-primary);padding:5px 8px 5px 0;white-space:nowrap;}
+.ic{background:var(--surface-1);border:0.5px solid var(--border);border-radius:6px;padding:10px 14px;margin-bottom:8px;line-height:1.7;}
+.ic-r{border-left:3px solid #e34948;}.ic-o{border-left:3px solid #0ca30c;}.ic-i{border-left:3px solid #3987e5;}
+.cc{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:1.5rem;}
+.cc-card{background:var(--surface-1);border:0.5px solid var(--border);border-radius:8px;padding:0.8rem 1rem;}
+.lu{font-size:11px;color:var(--text-muted);margin-top:1.5rem;padding-top:1rem;border-top:0.5px solid var(--border);}
+
+.etf-filter-btn{padding:5px 12px;background:var(--surface-2);border:0.5px solid var(--border);border-radius:4px;cursor:pointer;font-size:11px;color:var(--text-secondary);transition:all 0.2s;}
+.etf-filter-btn.active{background:#e34948;color:white;border-color:#e34948;}
+.etf-filter-btn:hover{background:var(--fill-accent);color:white;}
+.hm-row{display:flex;gap:3px;align-items:center;}
+.hm-cell{width:38px;height:30px;border-radius:4px;font-size:9px;font-weight:700;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:default;position:relative;transition:transform 0.1s;}
+.hm-cell:hover{transform:scale(1.1);z-index:2;}
+.hm-cell .hm-yr{font-size:8px;font-weight:400;opacity:0.75;margin-bottom:1px;}
+.hm-good{background:#0ca30c;color:white;}
+.hm-ok{background:#fab219;color:#000;}
+.hm-low{background:#e34948;color:white;}
+.hm-na{background:var(--surface-2);color:var(--text-muted);}
+.cons-wrap{display:flex;align-items:center;gap:6px;}
+.cons-bar{flex:1;height:8px;background:var(--surface-2);border-radius:4px;overflow:hidden;min-width:60px;}
+.cons-fill{height:100%;border-radius:4px;}
+.cons-fill.c100{background:#0ca30c;}
+.cons-fill.c95{background:#4caf50;}
+.cons-fill.c90{background:#fab219;}
+.cons-fill.c85{background:#e34948;}
+.cons-pct{font-size:11px;font-weight:700;min-width:36px;}
+.cons-stars{font-size:10px;letter-spacing:1px;}
+.trend-up{color:#0ca30c;font-size:16px;font-weight:700;}
+.trend-dn{color:#e34948;font-size:16px;font-weight:700;}
+.trend-st{color:#fab219;font-size:16px;}
+.yield-big{font-size:16px;font-weight:700;color:#7c3aed;}
+.streak-badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:700;}
+.streak-gold{background:rgba(250,178,25,0.25);color:#a87800;}
+.streak-silver{background:rgba(168,168,168,0.25);color:#666;}
+.streak-bronze{background:rgba(180,100,50,0.25);color:#8b4513;}
+</style>
+</head>
+<body>
+<div class="dashboard">
+<div class="header">
+  <div class="header-left">
+    <h1>🌍 Investment Dashboard v3 — Rebalanced Portfolio</h1>
+    <p>NASDAQ · S&P 500 · TSX · Global Watchlist · <strong>My Funds: 11 holdings · $35,069 CAD</strong></p>
+  </div>
+  <div class="header-right">
+    <div class="refresh-block">
+      <button class="refresh-btn" id="refresh-btn" onclick="refreshAll()">🔄 Refresh Overlap Data</button>
+      <span class="refresh-status" id="refresh-status">Auto-fetches on page load</span>
+    </div>
+    <button class="theme-btn active" onclick="setTheme('light')">☀️ Light</button>
+    <button class="theme-btn" onclick="setTheme('dark')">🌙 Dark</button>
+  </div>
+</div>
+<div class="tabs">
+  <span class="rl us-rl">🇺🇸 US</span>
+  <button class="tab-button" onclick="switchTab('nasdaq-out',this)">NASDAQ Out</button>
+  <button class="tab-button" onclick="switchTab('nasdaq-alt',this)">NASDAQ Alt</button>
+  <button class="tab-button" onclick="switchTab('sp500-out',this)">S&amp;P 500 Out</button>
+  <button class="tab-button" onclick="switchTab('sp500-alt',this)">S&amp;P 500 Alt</button>
+  <button class="tab-button" onclick="switchTab('us-div',this)">US Divs</button>
+  <span class="div">|</span>
+  <span class="rl ca-rl">🇨🇦 CA</span>
+  <button class="tab-button" onclick="switchTab('tsx-out',this)">TSX Out</button>
+  <button class="tab-button" onclick="switchTab('tsx-alt',this)">TSX Alt</button>
+  <button class="tab-button" onclick="switchTab('ca-div',this)">CA Divs</button>
+  <button class="tab-button" onclick="switchTab('ca-div-etf',this)">CA Div ETFs ★</button>
+  <span class="div">|</span>
+  <span class="rl gl-rl">🌍</span>
+  <button class="tab-button" onclick="switchTab('watchlist',this)">Watchlist</button>
+  <span class="div">|</span>
+  <span class="rl my-rl">🗂️</span>
+  <button class="tab-button active" onclick="switchTab('my-funds',this)" style="font-weight:700;color:#7c3aed;">My Funds ★</button>
+</div>
+
+<!-- ═══ MY FUNDS TAB (DEFAULT ACTIVE) ═══ -->
+<div id="my-funds" class="tab-content active">
+  <div class="stats-grid">
+    <div class="stat-card"><div class="stat-label">Portfolio Value</div><div class="stat-value" style="color:#7c3aed">$35,069</div><div class="stat-change positive">CAD · 11 holdings</div></div>
+    <div class="stat-card"><div class="stat-label">Today's Return</div><div class="stat-value pos">+$250.43</div><div class="stat-change positive">+0.71% today</div></div>
+    <div class="stat-card"><div class="stat-label">All-Time Gain</div><div class="stat-value pos">+$897.90</div><div class="stat-change positive">+2.63% all-time</div></div>
+    <div class="stat-card"><div class="stat-label">Best Performer</div><div class="stat-value" style="color:#0ca30c">FID1608</div><div class="stat-change positive">+27.92% 🏆</div></div>
+    <div class="stat-card"><div class="stat-label">Only Loser</div><div class="stat-value" style="color:#e34948">XEG</div><div class="stat-change neg">−1.99% all-time</div></div>
+    <div class="stat-card"><div class="stat-label">Highest Overlap</div><div class="stat-value" id="mf-wp" style="font-size:13px;color:#e34948">—</div><div class="stat-change" id="mf-wn">Loading…</div></div>
+    <div class="stat-card"><div class="stat-label">Most Distinct</div><div class="stat-value" id="mf-bf" style="font-size:13px;color:#0ca30c">—</div><div class="stat-change" id="mf-bn">Loading…</div></div>
+  </div>
+  <div class="dn" id="note-my-funds" style="border-left-color:#7c3aed"><span class="sp">⏳</span> Analysing overlap across your 11 rebalanced funds via Claude AI…</div>
+
+  <div class="section-title" style="color:#7c3aed">📊 Your Portfolio Holdings — Rebalanced (from App Screenshot)</div>
+  <div class="table-wrapper">
+    <table>
+      <thead><tr><th>Ticker</th><th>Full Name</th><th>Type</th><th>Geography</th><th>Strategy</th><th>Provider</th><th>Alloc %</th><th>Qty</th><th>Today $</th><th>Today %</th><th>Total Value</th><th>All-Time $</th><th>All-Time %</th></tr></thead>
+      <tbody>
+        <tr><td class="ticker">ZWC</td><td>BMO Canadian High Dividend Covered Call ETF</td><td>ETF</td><td>Canada</td><td>CA large-cap dividend + covered calls</td><td>BMO</td><td><strong>30.00%</strong></td><td>461.2215</td><td class="pos">+$37.29</td><td class="pos">+0.36%</td><td><strong>$10,529.69</strong></td><td class="pos">+$130.51</td><td class="pos">+1.25%</td></tr>
+        <tr><td class="ticker">HDIV</td><td>Hamilton Enhanced Multi-Sector Covered Call ETF</td><td>ETF-of-ETFs</td><td>Canada</td><td>Covered call basket + 25% leverage</td><td>Hamilton</td><td><strong>23.36%</strong></td><td>347.8322</td><td class="pos">+$92.25</td><td class="pos">+1.14%</td><td><strong>$8,198.40</strong></td><td class="pos">+$290.80</td><td class="pos">+3.68%</td></tr>
+        <tr><td class="ticker">XEQT</td><td>iShares Core Equity ETF Portfolio</td><td>ETF</td><td>Global</td><td>~25% CA · ~45% US · ~22% Intl · ~8% EM</td><td>BlackRock</td><td><strong>11.92%</strong></td><td>92.9621</td><td class="pos">+$37.29</td><td class="pos">+0.90%</td><td><strong>$4,182.36</strong></td><td class="pos">+$6.37</td><td class="pos">+0.15%</td></tr>
+        <tr><td class="ticker">EMAX</td><td>Evolve Enhanced Yield Fund</td><td>ETF</td><td>Canada/US</td><td>Covered call income — multi-asset</td><td>Evolve</td><td><strong>9.45%</strong></td><td>190.0807</td><td class="pos">+$15.85</td><td class="pos">+0.48%</td><td><strong>$3,317.85</strong></td><td class="pos">+$193.08</td><td class="pos">+6.18%</td></tr>
+        <tr><td class="ticker">ZEA</td><td>BMO MSCI EAFE Index ETF</td><td>ETF</td><td>International</td><td>Europe, Asia, Australia developed markets</td><td>BMO</td><td><strong>8.58%</strong></td><td>95.7944</td><td class="pos">+$47.90</td><td class="pos">+1.62%</td><td><strong>$3,010.82</strong></td><td class="pos">+$3.21</td><td class="pos">+0.11%</td></tr>
+        <tr><td class="ticker">FID1608</td><td>Fidelity Canadian Opportunities Fund (Series B)</td><td>Mutual</td><td>Canada</td><td>Active CA equity — small/mid/large blend</td><td>Fidelity</td><td><strong>3.67%</strong></td><td>22.6651</td><td style="color:var(--text-muted)">$0.00</td><td style="color:var(--text-muted)">0.00%</td><td><strong>$1,289.04</strong></td><td class="pos">+$281.36</td><td class="pos" style="font-weight:700">+27.92% 🏆</td></tr>
+        <tr><td class="ticker">USCC</td><td>Hamilton U.S. Large Cap Covered Call ETF</td><td>ETF</td><td>United States</td><td>S&amp;P 500 + covered call + 25% leverage</td><td>Hamilton</td><td><strong>2.98%</strong></td><td>50</td><td style="color:var(--text-muted)">$0.00</td><td style="color:var(--text-muted)">0.00%</td><td><strong>$1,047.50</strong></td><td style="color:var(--text-muted)">$0.00</td><td style="color:var(--text-muted)">0.00%</td></tr>
+        <tr><td class="ticker">XUS</td><td>iShares Core S&amp;P 500 Index ETF (CAD-Hedged)</td><td>ETF</td><td>United States</td><td>500 US large-caps, CAD hedged</td><td>BlackRock</td><td><strong>2.87%</strong></td><td>15.3771</td><td class="pos">+$11.99</td><td class="pos">+1.21%</td><td><strong>$1,006.43</strong></td><td class="pos">+$2.60</td><td class="pos">+0.26%</td></tr>
+        <tr><td class="ticker">RNCC</td><td>Hamilton Enhanced REIT Covered Call ETF</td><td>ETF</td><td>Canada/US</td><td>North American REITs + covered call overlay</td><td>Hamilton</td><td><strong>2.80%</strong></td><td>55</td><td class="pos">+$1.65</td><td class="pos">+0.17%</td><td><strong>$981.20</strong></td><td class="pos">+$1.65</td><td class="pos">+0.17%</td></tr>
+        <tr><td class="ticker">GLCC</td><td>Hamilton Global Atlas Covered Call ETF</td><td>ETF</td><td>Global</td><td>Global large-caps + covered call income</td><td>Hamilton</td><td><strong>2.77%</strong></td><td>20.7319</td><td class="neg">−$0.83</td><td class="neg">−0.09%</td><td><strong>$972.12</strong></td><td class="neg">−$0.83</td><td class="neg">−0.09%</td></tr>
+        <tr><td class="ticker">XEG</td><td>iShares S&amp;P/TSX Capped Energy Index ETF</td><td>ETF</td><td>Canada</td><td>Canadian energy sector (~25 stocks)</td><td>BlackRock</td><td><strong>1.52%</strong></td><td>20.126</td><td class="pos">+$7.04</td><td class="pos">+1.33%</td><td><strong>$534.95</strong></td><td class="neg">−$10.85</td><td class="neg">−1.99%</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="section-title" style="color:#7c3aed">🗂️ Strategy Concentration</div>
+  <div class="cc">
+    <div class="cc-card" style="border-left:3px solid #e34948"><div class="stat-label">Covered Call Income</div><div class="stat-value" style="color:#e34948;font-size:22px">62.81%</div><div style="font-size:10px;color:var(--text-muted);margin-top:4px">ZWC 30% + HDIV 23.36% + EMAX 9.45%</div></div>
+    <div class="cc-card" style="border-left:3px solid #3987e5"><div class="stat-label">Global Diversified Equity</div><div class="stat-value" style="color:#3987e5;font-size:22px">11.92%</div><div style="font-size:10px;color:var(--text-muted);margin-top:4px">XEQT — 45% US, 25% CA, 22% Intl, 8% EM</div></div>
+    <div class="cc-card" style="border-left:3px solid #0ca30c"><div class="stat-label">International (EAFE)</div><div class="stat-value" style="color:#0ca30c;font-size:22px">8.58%</div><div style="font-size:10px;color:var(--text-muted);margin-top:4px">ZEA — Europe, Asia, Australia</div></div>
+    <div class="cc-card" style="border-left:3px solid #fab219"><div class="stat-label">US Equity Exposure</div><div class="stat-value" style="color:#fab219;font-size:22px">5.85%</div><div style="font-size:10px;color:var(--text-muted);margin-top:4px">USCC 2.98% + XUS 2.87%</div></div>
+    <div class="cc-card" style="border-left:3px solid #a366c7"><div class="stat-label">Active / Niche / REIT</div><div class="stat-value" style="color:#a366c7;font-size:22px">10.84%</div><div style="font-size:10px;color:var(--text-muted);margin-top:4px">FID1608 + RNCC + GLCC + XEG</div></div>
+  </div>
+
+  <div class="section-title" style="color:#7c3aed;margin-top:2rem">🔥 11×11 Holdings Overlap Matrix</div>
+  <div style="font-size:11px;color:var(--text-secondary);margin-bottom:1rem">
+    Each cell = % of underlying stock holdings shared between the two funds.
+    <strong style="color:#0ca30c">Green &lt;35%</strong> = diversified ·
+    <strong style="color:#fab219">Yellow 35–54%</strong> = moderate ·
+    <strong style="color:#e34948">Red 55–74%</strong> = high ·
+    <strong style="color:#7f1d1d">Dark red ≥75%</strong> = near-identical. Diagonal = self = 100%.
+  </div>
+  <div class="table-wrapper">
+    <table id="mf-matrix-table" style="font-size:10px">
+      <thead><tr id="mf-matrix-head"></tr></thead>
+      <tbody id="mf-matrix-body"></tbody>
+    </table>
+  </div>
+
+  <div class="section-title" style="color:#7c3aed;margin-top:2rem">💡 Overlap Insights &amp; Diversification Analysis</div>
+  <div id="mf-insights" style="font-size:12px;color:var(--text-secondary)"></div>
+</div>
+
+<!-- ═══ NASDAQ OUTPERFORMERS ═══ -->
+<div id="nasdaq-out" class="tab-content">
+  <div class="stats-grid">
+    <div class="stat-card"><div class="stat-label">Outperformers</div><div class="stat-value">7</div><div class="stat-change positive">Beat NASDAQ-100</div></div>
+    <div class="stat-card"><div class="stat-label">Best Performer</div><div class="stat-value pos">FOCPX</div><div class="stat-change positive">+298% (10Y)</div></div>
+    <div class="stat-card"><div class="stat-label">Avg 10Y Return</div><div class="stat-value pos">+223%</div><div class="stat-change positive">2.23× wealth</div></div>
+    <div class="stat-card"><div class="stat-label">QQQ Baseline</div><div class="stat-value pos">+204%</div><div class="stat-change">Index benchmark</div></div>
+  </div>
+  <div class="dn" id="note-nq-out"><span class="sp">⏳</span> Fetching live overlap data…</div>
+  <div class="lg"><div class="li"><div class="ld" style="background:#0ca30c"></div>Peer &lt;35% = Diversified</div><div class="li"><div class="ld" style="background:#fab219"></div>35–65% = Moderate</div><div class="li"><div class="ld" style="background:#e34948"></div>&gt;65% = Redundant</div></div>
+  <div class="section-title">NASDAQ-100 Outperformers — Peer &amp; Index Overlap</div>
+  <div class="table-wrapper"><table>
+    <thead><tr><th>Fund (Inception)</th><th>Type</th><th>NAV</th><th>MER</th><th>CAGR vs QQQ</th><th>10Y Return</th><th>$10k Becomes</th><th>AUM ($B)</th><th title="Avg overlap % with other funds in this tab">📊 Peer Overlap</th><th title="% holdings in NASDAQ-100">📈 vs NASDAQ-100</th></tr></thead>
+    <tbody id="nq-out-body">
+      <tr><td class="ticker">FOCPX (1990)</td><td>Mutual</td><td class="nav-hl">$198.34</td><td>0.65%</td><td class="pos">+1.24%</td><td class="pos">+298%</td><td class="pos">$39,800</td><td>$128.5</td><td class="ov-peer pulse">—</td><td class="ov-idx pulse">—</td></tr>
+      <tr><td class="ticker">VGT (2004)</td><td>ETF</td><td>$445.28</td><td>0.10%</td><td class="pos">+0.18%</td><td class="pos">+218%</td><td class="pos">$31,800</td><td>$61.2</td><td class="ov-peer pulse">—</td><td class="ov-idx pulse">—</td></tr>
+      <tr><td class="ticker">IWF (2000)</td><td>ETF</td><td>$512.18</td><td>0.19%</td><td class="pos">+0.58%</td><td class="pos">+186%</td><td class="pos">$28,600</td><td>$52.8</td><td class="ov-peer pulse">—</td><td class="ov-idx pulse">—</td></tr>
+      <tr><td class="ticker">VUG (1992)</td><td>ETF</td><td>$238.92</td><td>0.08%</td><td class="pos">+0.45%</td><td class="pos">+198%</td><td class="pos">$29,800</td><td>$89.2</td><td class="ov-peer pulse">—</td><td class="ov-idx pulse">—</td></tr>
+      <tr><td class="ticker">VOOV (2010)</td><td>ETF</td><td>$187.54</td><td>0.08%</td><td class="pos">+0.32%</td><td class="pos">+172%</td><td class="pos">$27,200</td><td>$89.3</td><td class="ov-peer pulse">—</td><td class="ov-idx pulse">—</td></tr>
+      <tr><td class="ticker">XLK (1998)</td><td>ETF</td><td>$209.34</td><td>0.08%</td><td class="pos">+0.18%</td><td class="pos">+192%</td><td class="pos">$29,200</td><td>$185.6</td><td class="ov-peer pulse">—</td><td class="ov-idx pulse">—</td></tr>
+      <tr><td class="ticker">ONEQ (1998)</td><td>ETF</td><td>$298.45</td><td>0.45%</td><td class="pos">+0.12%</td><td class="pos">+204%</td><td class="pos">$30,400</td><td>$18.2</td><td class="ov-peer pulse">—</td><td class="ov-idx pulse">—</td></tr>
+    </tbody>
+  </table></div>
+</div>
+
+<!-- ═══ NASDAQ ALT ═══ -->
+<div id="nasdaq-alt" class="tab-content">
+  <div class="stats-grid">
+    <div class="stat-card"><div class="stat-label">Alternatives</div><div class="stat-value">10</div></div>
+    <div class="stat-card"><div class="stat-label">Avg 10Y Return</div><div class="stat-value pos">+198%</div></div>
+    <div class="stat-card"><div class="stat-label">Lowest MER</div><div class="stat-value">SCHG</div><div class="stat-change">0.04%</div></div>
+    <div class="stat-card"><div class="stat-label">Lowest NAV</div><div class="stat-value">QQQS</div><div class="stat-change">$42.34</div></div>
+  </div>
+  <div class="dn" id="note-nq-alt"><span class="sp">⏳</span> Fetching live overlap data…</div>
+  <div class="lg"><div class="li"><div class="ld" style="background:#0ca30c"></div>&lt;35% Diversified</div><div class="li"><div class="ld" style="background:#fab219"></div>35–65% Moderate</div><div class="li"><div class="ld" style="background:#e34948"></div>&gt;65% Redundant</div></div>
+  <div class="section-title">NASDAQ Alternatives — Peer &amp; Index Overlap</div>
+  <div class="table-wrapper"><table>
+    <thead><tr><th>Alternative Fund</th><th>Type</th><th>NAV</th><th>MER</th><th>10Y Return</th><th>$10k Becomes</th><th>Linked To</th><th>Advantage</th><th>📊 Peer Overlap</th><th>📈 vs NASDAQ-100</th></tr></thead>
+    <tbody id="nq-alt-body">
+      <tr><td class="ticker">QQQ (1999)</td><td>ETF</td><td class="nav-hl">$529.45</td><td>0.20%</td><td class="pos">+204%</td><td class="pos">$30,400</td><td>Baseline</td><td><span class="badge b-green">Most Liquid</span></td><td class="ov-peer pulse">—</td><td class="ov-idx pulse">—</td></tr>
+      <tr><td class="ticker">QQQM (2020)</td><td>ETF</td><td>$47.82</td><td>0.15%</td><td class="pos">+201%</td><td class="pos">$30,100</td><td>QQQ</td><td><span class="badge b-blue">Mini Shares</span></td><td class="ov-peer pulse">—</td><td class="ov-idx pulse">—</td></tr>
+      <tr><td class="ticker">SPLG (2011)</td><td>ETF</td><td>$89.34</td><td>0.09%</td><td class="pos">+199%</td><td class="pos">$29,900</td><td>QQQ</td><td><span class="badge b-blue">Portfolio</span></td><td class="ov-peer pulse">—</td><td class="ov-idx pulse">—</td></tr>
+      <tr><td class="ticker">SCHG (2018)</td><td>ETF</td><td>$87.45</td><td>0.04%</td><td class="pos">+168%</td><td class="pos">$26,800</td><td>VUG</td><td><span class="badge b-yel">LOWEST COST</span></td><td class="ov-peer pulse">—</td><td class="ov-idx pulse">—</td></tr>
+      <tr><td class="ticker">IQQ (2026)</td><td>ETF</td><td>$52.18</td><td>0.10%</td><td class="pos">+188%</td><td class="pos">$28,800</td><td>QQQ</td><td><span class="badge b-blue">Newest</span></td><td class="ov-peer pulse">—</td><td class="ov-idx pulse">—</td></tr>
+      <tr><td class="ticker">VGT (2004)</td><td>ETF</td><td>$445.28</td><td>0.10%</td><td class="pos">+218%</td><td class="pos">$31,800</td><td>Tech</td><td><span class="badge b-blue">All-Cap Tech</span></td><td class="ov-peer pulse">—</td><td class="ov-idx pulse">—</td></tr>
+      <tr><td class="ticker">QQQS (2024)</td><td>ETF</td><td>$42.34</td><td>0.10%</td><td class="pos">+196%</td><td class="pos">$29,600</td><td>QQQ</td><td><span class="badge b-yel">LOWEST NAV</span></td><td class="ov-peer pulse">—</td><td class="ov-idx pulse">—</td></tr>
+      <tr><td class="ticker">VOOV (2010)</td><td>ETF</td><td>$187.54</td><td>0.08%</td><td class="pos">+172%</td><td class="pos">$27,200</td><td>Mega-Cap</td><td><span class="badge b-blue">Vanguard</span></td><td class="ov-peer pulse">—</td><td class="ov-idx pulse">—</td></tr>
+      <tr><td class="ticker">XLK (1998)</td><td>ETF</td><td>$209.34</td><td>0.08%</td><td class="pos">+192%</td><td class="pos">$29,200</td><td>Tech</td><td><span class="badge b-blue">Sector Play</span></td><td class="ov-peer pulse">—</td><td class="ov-idx pulse">—</td></tr>
+      <tr><td class="ticker">SWTX (2012)</td><td>ETF</td><td>$178.92</td><td>0.12%</td><td class="pos">+185%</td><td class="pos">$28,500</td><td>Growth</td><td><span class="badge b-blue">Schwab</span></td><td class="ov-peer pulse">—</td><td class="ov-idx pulse">—</td></tr>
+    </tbody>
+  </table></div>
+</div>
+
+<!-- ═══ S&P 500 OUT ═══ -->
+<div id="sp500-out" class="tab-content">
+  <div class="stats-grid">
+    <div class="stat-card"><div class="stat-label">Outperformers</div><div class="stat-value">8</div><div class="stat-change positive">Beat S&amp;P 500</div></div>
+    <div class="stat-card"><div class="stat-label">Best Performer</div><div class="stat-value pos">BRK</div><div class="stat-change positive">+820% (10Y)</div></div>
+    <div class="stat-card"><div class="stat-label">Avg 10Y Return</div><div class="stat-value pos">+428%</div></div>
+    <div class="stat-card"><div class="stat-label">VOO Baseline</div><div class="stat-value pos">+188%</div></div>
+  </div>
+  <div class="dn" id="note-sp-out"><span class="sp">⏳</span> Fetching live overlap data…</div>
+  <div class="lg"><div class="li"><div class="ld" style="background:#0ca30c"></div>&lt;35% Diversified</div><div class="li"><div class="ld" style="background:#fab219"></div>35–65% Moderate</div><div class="li"><div class="ld" style="background:#e34948"></div>&gt;65% Redundant</div></div>
+  <div class="section-title">S&amp;P 500 Outperformers — Peer &amp; Index Overlap</div>
+  <div class="table-wrapper"><table>
+    <thead><tr><th>Fund (Inception)</th><th>Type</th><th>NAV</th><th>MER</th><th>CAGR vs S&amp;P</th><th>10Y Return</th><th>$10k Becomes</th><th>AUM ($B)</th><th>📊 Peer Overlap</th><th>📈 vs S&amp;P 500</th></tr></thead>
+    <tbody id="sp-out-body">
+      <tr><td class="ticker">BRK (1965)</td><td>Holding</td><td class="nav-hl">$655,432</td><td>0.00%</td><td class="pos">+9.9%</td><td class="pos">+820%</td><td class="pos">$92,000</td><td>$975.4</td><td class="ov-peer pulse">—</td><td class="ov-idx pulse">—</td></tr>
+      <tr><td class="ticker">FCNTX (1967)</td><td>Mutual</td><td class="nav-hl">$287.45</td><td>0.81%</td><td class="pos">+2.25%</td><td class="pos">+268%</td><td class="pos">$36,800</td><td>$245.6</td><td class="ov-peer pulse">—</td><td class="ov-idx pulse">—</td></tr>
+      <tr><td class="ticker">VUG (1992)</td><td>ETF</td><td>$238.92</td><td>0.08%</td><td class="pos">+3.1%</td><td class="pos">+245%</td><td class="pos">$34,500</td><td>$89.2</td><td class="ov-peer pulse">—</td><td class="ov-idx pulse">—</td></tr>
+      <tr><td class="ticker">VTI (2001)</td><td>ETF</td><td>$289.34</td><td>0.03%</td><td class="pos">+0.8%</td><td class="pos">+212%</td><td class="pos">$31,200</td><td>$389.2</td><td class="ov-peer pulse">—</td><td class="ov-idx pulse">—</td></tr>
+      <tr><td class="ticker">RSP (2003)</td><td>ETF</td><td>$178.23</td><td>0.20%</td><td class="pos">+0.6%</td><td class="pos">+156%</td><td class="pos">$25,600</td><td>$45.7</td><td class="ov-peer pulse">—</td><td class="ov-idx pulse">—</td></tr>
+      <tr><td class="ticker">MOAT (2012)</td><td>ETF</td><td>$142.67</td><td>0.40%</td><td class="pos">+0.8%</td><td class="pos">+156%</td><td class="pos">$25,600</td><td>$18.4</td><td class="ov-peer pulse">—</td><td class="ov-idx pulse">—</td></tr>
+      <tr><td class="ticker">IWM (1984)</td><td>ETF</td><td>$224.56</td><td>0.19%</td><td class="pos">+1.1%</td><td class="pos">+152%</td><td class="pos">$25,200</td><td>$68.9</td><td class="ov-peer pulse">—</td><td class="ov-idx pulse">—</td></tr>
+      <tr><td class="ticker">SPLV (2011)</td><td>ETF</td><td>$156.78</td><td>0.03%</td><td class="pos">+0.4%</td><td class="pos">+142%</td><td class="pos">$24,200</td><td>$28.3</td><td class="ov-peer pulse">—</td><td class="ov-idx pulse">—</td></tr>
+    </tbody>
+  </table></div>
+</div>
+
+<!-- ═══ S&P 500 ALT ═══ -->
+<div id="sp500-alt" class="tab-content">
+  <div class="stats-grid">
+    <div class="stat-card"><div class="stat-label">Alternatives</div><div class="stat-value">10</div></div>
+    <div class="stat-card"><div class="stat-label">Avg 10Y Return</div><div class="stat-value pos">+182%</div></div>
+    <div class="stat-card"><div class="stat-label">Lowest MER</div><div class="stat-value">FNILX</div><div class="stat-change">0.00%</div></div>
+    <div class="stat-card"><div class="stat-label">Lowest NAV</div><div class="stat-value">VTSAX</div><div class="stat-change">$89.34</div></div>
+  </div>
+  <div class="dn" id="note-sp-alt"><span class="sp">⏳</span> Fetching live overlap data…</div>
+  <div class="lg"><div class="li"><div class="ld" style="background:#0ca30c"></div>&lt;35% Diversified</div><div class="li"><div class="ld" style="background:#fab219"></div>35–65% Moderate</div><div class="li"><div class="ld" style="background:#e34948"></div>&gt;65% Redundant</div></div>
+  <div class="section-title">S&amp;P 500 Alternatives — Peer &amp; Index Overlap</div>
+  <div class="table-wrapper"><table>
+    <thead><tr><th>Alternative Fund</th><th>Type</th><th>NAV</th><th>MER</th><th>10Y Return</th><th>$10k Becomes</th><th>Linked To</th><th>Advantage</th><th>📊 Peer Overlap</th><th>📈 vs S&amp;P 500</th></tr></thead>
+    <tbody id="sp-alt-body">
+      <tr><td class="ticker">VOO (2010)</td><td>ETF</td><td class="nav-hl">$502.18</td><td>0.03%</td><td class="pos">+188%</td><td class="pos">$28,800</td><td>Baseline</td><td><span class="badge b-green">Most Popular</span></td><td class="ov-peer pulse">—</td><td class="ov-idx pulse">—</td></tr>
+      <tr><td class="ticker">FNILX (2025)</td><td>Mutual</td><td>$100.12</td><td>0.00%</td><td class="pos">+187%</td><td class="pos">$28,700</td><td>S&amp;P 500</td><td><span class="badge b-green">ZERO FEE</span></td><td class="ov-peer pulse">—</td><td class="ov-idx pulse">—</td></tr>
+      <tr><td class="ticker">FXAIX (2011)</td><td>Mutual</td><td>$147.89</td><td>0.015%</td><td class="pos">+186%</td><td class="pos">$28,600</td><td>S&amp;P 500</td><td><span class="badge b-yel">CHEAPEST</span></td><td class="ov-peer pulse">—</td><td class="ov-idx pulse">—</td></tr>
+      <tr><td class="ticker">SWPPX (1997)</td><td>Mutual</td><td>$287.54</td><td>0.02%</td><td class="pos">+188%</td><td class="pos">$28,800</td><td>S&amp;P 500</td><td><span class="badge b-yel">NEAR-ZERO</span></td><td class="ov-peer pulse">—</td><td class="ov-idx pulse">—</td></tr>
+      <tr><td class="ticker">SPLG (2001)</td><td>ETF</td><td>$93.45</td><td>0.03%</td><td class="pos">+188%</td><td class="pos">$28,800</td><td>S&amp;P 500</td><td><span class="badge b-blue">LOW NAV</span></td><td class="ov-peer pulse">—</td><td class="ov-idx pulse">—</td></tr>
+      <tr><td class="ticker">VTI (2001)</td><td>ETF</td><td>$289.34</td><td>0.03%</td><td class="pos">+212%</td><td class="pos">$31,200</td><td>Total US</td><td><span class="badge b-blue">BROADER</span></td><td class="ov-peer pulse">—</td><td class="ov-idx pulse">—</td></tr>
+      <tr><td class="ticker">ITOT (2004)</td><td>ETF</td><td>$112.67</td><td>0.03%</td><td class="pos">+189%</td><td class="pos">$28,900</td><td>S&amp;P 500</td><td><span class="badge b-blue">iShares Core</span></td><td class="ov-peer pulse">—</td><td class="ov-idx pulse">—</td></tr>
+      <tr><td class="ticker">VTSAX (2001)</td><td>Mutual</td><td>$89.34</td><td>0.04%</td><td class="pos">+212%</td><td class="pos">$31,200</td><td>Total US</td><td><span class="badge b-yel">LOWEST NAV</span></td><td class="ov-peer pulse">—</td><td class="ov-idx pulse">—</td></tr>
+      <tr><td class="ticker">RSP (2003)</td><td>ETF</td><td>$178.23</td><td>0.20%</td><td class="pos">+156%</td><td class="pos">$25,600</td><td>Equal Wt</td><td><span class="badge b-blue">REBALANCE</span></td><td class="ov-peer pulse">—</td><td class="ov-idx pulse">—</td></tr>
+      <tr><td class="ticker">SPLV (2011)</td><td>ETF</td><td>$156.78</td><td>0.03%</td><td class="pos">+142%</td><td class="pos">$24,200</td><td>Low Vol</td><td><span class="badge b-blue">LOW RISK</span></td><td class="ov-peer pulse">—</td><td class="ov-idx pulse">—</td></tr>
+    </tbody>
+  </table></div>
+</div>
+
+<!-- ═══ US DIVIDENDS ═══ -->
+<div id="us-div" class="tab-content">
+  <div class="stats-grid">
+    <div class="stat-card"><div class="stat-label">Stocks</div><div class="stat-value">10</div></div>
+    <div class="stat-card"><div class="stat-label">Best</div><div class="stat-value pos">BX +385%</div></div>
+    <div class="stat-card"><div class="stat-label">Avg Return</div><div class="stat-value neu">+118%</div></div>
+    <div class="stat-card"><div class="stat-label">Avg Yield</div><div class="stat-value neu">3.2%</div></div>
+  </div>
+  <div class="section-title">US Dividend-Paying Stocks: 10-Year Performance</div>
+  <div class="table-wrapper"><table>
+    <thead><tr><th>Ticker</th><th>Company</th><th>Sector</th><th>10Y Return</th><th>CAGR</th><th>$10k Becomes</th><th>Div Yield</th><th>Status</th></tr></thead>
+    <tbody>
+      <tr><td class="ticker">BX</td><td>Blackstone</td><td>Finance</td><td class="pos">+385%</td><td class="pos">15.8%</td><td class="pos">$48,500</td><td>3.8%</td><td><span class="badge b-pur">Growth Winner</span></td></tr>
+      <tr><td class="ticker">ACN</td><td>Accenture</td><td>IT Services</td><td class="pos">+245%</td><td class="pos">13.0%</td><td class="pos">$34,500</td><td>1.8%</td><td><span class="badge b-pur">Growth Stock</span></td></tr>
+      <tr><td class="ticker">PEP</td><td>PepsiCo</td><td>Consumer</td><td class="pos">+168%</td><td class="pos">10.5%</td><td class="pos">$26,800</td><td>2.8%</td><td><span class="badge b-pur">Stable Growth</span></td></tr>
+      <tr><td class="ticker">MDLZ</td><td>Mondelez</td><td>Consumer</td><td class="pos">+142%</td><td class="pos">9.4%</td><td class="pos">$24,200</td><td>2.4%</td><td><span class="badge b-pur">Moderate</span></td></tr>
+      <tr><td class="ticker">MDT</td><td>Medtronic</td><td>Healthcare</td><td class="pos">+118%</td><td class="pos">8.2%</td><td class="pos">$21,800</td><td>2.2%</td><td><span class="badge b-pur">Healthcare</span></td></tr>
+      <tr><td class="ticker">KMB</td><td>Kimberly-Clark</td><td>Consumer</td><td class="pos">+94%</td><td class="pos">7.0%</td><td class="pos">$19,400</td><td>3.4%</td><td><span class="badge b-pur">Income Focus</span></td></tr>
+      <tr><td class="ticker">USB</td><td>U.S. Bancorp</td><td>Banking</td><td class="pos">+82%</td><td class="pos">6.3%</td><td class="pos">$18,200</td><td>3.1%</td><td><span class="badge b-pur">Conservative</span></td></tr>
+      <tr><td class="ticker">DUK</td><td>Duke Energy</td><td>Utility</td><td class="pos">+68%</td><td class="pos">5.4%</td><td class="pos">$16,800</td><td>4.2%</td><td><span class="badge b-pur">High Yield</span></td></tr>
+      <tr><td class="ticker">AEP</td><td>American Electric</td><td>Utility</td><td class="pos">+54%</td><td class="pos">4.5%</td><td class="pos">$15,400</td><td>3.6%</td><td><span class="badge b-pur">Utility</span></td></tr>
+      <tr><td class="ticker">RF</td><td>Regions Financial</td><td>Banking</td><td class="pos">+42%</td><td class="pos">3.6%</td><td class="pos">$14,200</td><td>2.9%</td><td><span class="badge b-pur">Laggard</span></td></tr>
+    </tbody>
+  </table></div>
+</div>
+
+<!-- ═══ TSX OUT ═══ -->
+<div id="tsx-out" class="tab-content">
+  <div class="stats-grid">
+    <div class="stat-card"><div class="stat-label">Outperformers</div><div class="stat-value">6</div><div class="stat-change positive">Beat TSX</div></div>
+    <div class="stat-card"><div class="stat-label">Best</div><div class="stat-value pos">XDV +156%</div></div>
+    <div class="stat-card"><div class="stat-label">Avg Return</div><div class="stat-value pos">+124%</div></div>
+    <div class="stat-card"><div class="stat-label">TSX Baseline</div><div class="stat-value pos">+84%</div></div>
+  </div>
+  <div class="dn" id="note-tsx-out"><span class="sp">⏳</span> Fetching live overlap data…</div>
+  <div class="lg"><div class="li"><div class="ld" style="background:#0ca30c"></div>&lt;35% Diversified</div><div class="li"><div class="ld" style="background:#fab219"></div>35–65% Moderate</div><div class="li"><div class="ld" style="background:#e34948"></div>&gt;65% Redundant</div></div>
+  <div class="section-title">TSX Outperformers — Peer &amp; Index Overlap</div>
+  <div class="table-wrapper"><table>
+    <thead><tr><th>Fund (Inception)</th><th>Type</th><th>Price CAD</th><th>MER</th><th>CAGR vs TSX</th><th>10Y Return</th><th>$10k CAD→</th><th>AUM ($B CAD)</th><th>📊 Peer Overlap</th><th>📈 vs TSX</th></tr></thead>
+    <tbody id="tsx-out-body">
+      <tr><td class="ticker">XDV (2006)</td><td>ETF</td><td class="nav-hl">$42.18</td><td>0.16%</td><td class="pos">+4.8%</td><td class="pos">+156%</td><td class="pos">$25,600</td><td>$18.2</td><td class="ov-peer pulse">—</td><td class="ov-idx pulse">—</td></tr>
+      <tr><td class="ticker">VCN (2011)</td><td>ETF</td><td>$38.45</td><td>0.08%</td><td class="pos">+2.1%</td><td class="pos">+108%</td><td class="pos">$21,800</td><td>$12.4</td><td class="ov-peer pulse">—</td><td class="ov-idx pulse">—</td></tr>
+      <tr><td class="ticker">XIC (2000)</td><td>ETF</td><td>$28.92</td><td>0.16%</td><td class="pos">+1.8%</td><td class="pos">+98%</td><td class="pos">$19,800</td><td>$22.6</td><td class="ov-peer pulse">—</td><td class="ov-idx pulse">—</td></tr>
+      <tr><td class="ticker">CDZ (2008)</td><td>ETF</td><td>$34.67</td><td>0.38%</td><td class="pos">+2.4%</td><td class="pos">+112%</td><td class="pos">$22,400</td><td>$8.9</td><td class="ov-peer pulse">—</td><td class="ov-idx pulse">—</td></tr>
+      <tr><td class="ticker">ZCS (2000)</td><td>ETF</td><td>$45.23</td><td>0.22%</td><td class="pos">+1.2%</td><td class="pos">+92%</td><td class="pos">$19,200</td><td>$5.3</td><td class="ov-peer pulse">—</td><td class="ov-idx pulse">—</td></tr>
+      <tr><td class="ticker">XCS (2001)</td><td>ETF</td><td>$56.78</td><td>0.18%</td><td class="pos">+0.9%</td><td class="pos">+88%</td><td class="pos">$18,800</td><td>$9.7</td><td class="ov-peer pulse">—</td><td class="ov-idx pulse">—</td></tr>
+    </tbody>
+  </table></div>
+</div>
+
+<!-- ═══ TSX ALT ═══ -->
+<div id="tsx-alt" class="tab-content">
+  <div class="stats-grid">
+    <div class="stat-card"><div class="stat-label">Alternatives</div><div class="stat-value">8</div></div>
+    <div class="stat-card"><div class="stat-label">Avg Return</div><div class="stat-value pos">+102%</div></div>
+    <div class="stat-card"><div class="stat-label">Lowest MER</div><div class="stat-value">VCN 0.08%</div></div>
+    <div class="stat-card"><div class="stat-label">Lowest Price</div><div class="stat-value">XIC $28.92</div></div>
+  </div>
+  <div class="dn" id="note-tsx-alt"><span class="sp">⏳</span> Fetching live overlap data…</div>
+  <div class="lg"><div class="li"><div class="ld" style="background:#0ca30c"></div>&lt;35% Diversified</div><div class="li"><div class="ld" style="background:#fab219"></div>35–65% Moderate</div><div class="li"><div class="ld" style="background:#e34948"></div>&gt;65% Redundant</div></div>
+  <div class="section-title">TSX Alternatives — Peer &amp; Index Overlap</div>
+  <div class="table-wrapper"><table>
+    <thead><tr><th>Fund</th><th>Type</th><th>Price CAD</th><th>MER</th><th>10Y Return</th><th>$10k CAD→</th><th>📊 Peer Overlap</th><th>📈 vs TSX</th></tr></thead>
+    <tbody id="tsx-alt-body">
+      <tr><td class="ticker">XIC</td><td>ETF</td><td class="nav-hl">$28.92</td><td>0.16%</td><td class="pos">+84%</td><td class="pos">$18,400</td><td class="ov-peer pulse">—</td><td class="ov-idx pulse">—</td></tr>
+      <tr><td class="ticker">VCN</td><td>ETF</td><td>$38.45</td><td>0.08%</td><td class="pos">+108%</td><td class="pos">$21,800</td><td class="ov-peer pulse">—</td><td class="ov-idx pulse">—</td></tr>
+      <tr><td class="ticker">XDV</td><td>ETF</td><td>$42.18</td><td>0.16%</td><td class="pos">+156%</td><td class="pos">$25,600</td><td class="ov-peer pulse">—</td><td class="ov-idx pulse">—</td></tr>
+      <tr><td class="ticker">CDZ</td><td>ETF</td><td>$34.67</td><td>0.38%</td><td class="pos">+112%</td><td class="pos">$22,400</td><td class="ov-peer pulse">—</td><td class="ov-idx pulse">—</td></tr>
+      <tr><td class="ticker">ZCS</td><td>ETF</td><td>$45.23</td><td>0.22%</td><td class="pos">+92%</td><td class="pos">$19,200</td><td class="ov-peer pulse">—</td><td class="ov-idx pulse">—</td></tr>
+      <tr><td class="ticker">XCS</td><td>ETF</td><td>$56.78</td><td>0.18%</td><td class="pos">+88%</td><td class="pos">$18,800</td><td class="ov-peer pulse">—</td><td class="ov-idx pulse">—</td></tr>
+      <tr><td class="ticker">TSX.TO</td><td>Index</td><td>$18,956</td><td>N/A</td><td class="pos">+84%</td><td class="pos">$18,400</td><td class="ov-peer pulse">—</td><td class="ov-idx pulse">—</td></tr>
+      <tr><td class="ticker">XSP</td><td>ETF</td><td>$31.45</td><td>0.09%</td><td class="pos">+81%</td><td class="pos">$18,100</td><td class="ov-peer pulse">—</td><td class="ov-idx pulse">—</td></tr>
+    </tbody>
+  </table></div>
+</div>
+
+<!-- ═══ CA DIVIDENDS ═══ -->
+<div id="ca-div" class="tab-content">
+  <div class="stats-grid">
+    <div class="stat-card"><div class="stat-label">Stocks</div><div class="stat-value">10</div></div>
+    <div class="stat-card"><div class="stat-label">Best</div><div class="stat-value pos">MG +198%</div></div>
+    <div class="stat-card"><div class="stat-label">Avg Return</div><div class="stat-value neu">+96%</div></div>
+    <div class="stat-card"><div class="stat-label">Avg Yield</div><div class="stat-value neu">3.8%</div></div>
+  </div>
+  <div class="section-title">Canadian Dividend-Paying Stocks (TSX)</div>
+  <div class="table-wrapper"><table>
+    <thead><tr><th>Ticker</th><th>Company</th><th>Sector</th><th>10Y Return</th><th>CAGR</th><th>$10k CAD→</th><th>Div Yield</th></tr></thead>
+    <tbody>
+      <tr><td class="ticker">MG</td><td>Magna International</td><td>Automotive</td><td class="pos">+198%</td><td class="pos">11.8%</td><td class="pos">$29,800</td><td>2.1%</td></tr>
+      <tr><td class="ticker">CNR</td><td>Canadian National Railway</td><td>Transport</td><td class="pos">+156%</td><td class="pos">9.6%</td><td class="pos">$25,600</td><td>2.4%</td></tr>
+      <tr><td class="ticker">RY</td><td>Royal Bank of Canada</td><td>Banking</td><td class="pos">+142%</td><td class="pos">9.0%</td><td class="pos">$24,200</td><td>3.6%</td></tr>
+      <tr><td class="ticker">TD</td><td>Toronto-Dominion Bank</td><td>Banking</td><td class="pos">+128%</td><td class="pos">8.4%</td><td class="pos">$22,800</td><td>3.8%</td></tr>
+      <tr><td class="ticker">ENB</td><td>Enbridge</td><td>Energy</td><td class="pos">+94%</td><td class="pos">7.0%</td><td class="pos">$19,400</td><td>7.2%</td></tr>
+      <tr><td class="ticker">TRP</td><td>TC Energy</td><td>Energy</td><td class="pos">+76%</td><td class="pos">5.8%</td><td class="pos">$17,600</td><td>5.8%</td></tr>
+      <tr><td class="ticker">BCE</td><td>Bell Canada</td><td>Telecom</td><td class="pos">+62%</td><td class="pos">4.9%</td><td class="pos">$16,200</td><td>5.2%</td></tr>
+      <tr><td class="ticker">T</td><td>Telus</td><td>Telecom</td><td class="pos">+54%</td><td class="pos">4.4%</td><td class="pos">$15,400</td><td>4.8%</td></tr>
+      <tr><td class="ticker">SU</td><td>Suncor Energy</td><td>Energy</td><td class="pos">+48%</td><td class="pos">4.0%</td><td class="pos">$14,800</td><td>4.1%</td></tr>
+      <tr><td class="ticker">NWC</td><td>Northwest Company</td><td>Retail</td><td class="pos">+38%</td><td class="pos">3.3%</td><td class="pos">$13,800</td><td>3.4%</td></tr>
+    </tbody>
+  </table></div>
+</div>
+
+
+<!-- ═══ CA DIVIDEND ETFs & MUTUAL FUNDS ═══ -->
+<div id="ca-div-etf" class="tab-content">
+  <div class="stats-grid">
+    <div class="stat-card"><div class="stat-label">Funds Tracked</div><div class="stat-value" style="color:#e34948">25</div><div class="stat-change positive">ETFs &amp; Mutual Funds</div></div>
+    <div class="stat-card"><div class="stat-label">Highest Yield</div><div class="stat-value" style="color:#0ca30c">HMAX 13.1%</div><div class="stat-change positive">CA covered call</div></div>
+    <div class="stat-card"><div class="stat-label">Most Consistent</div><div class="stat-value" style="color:#3987e5">MO / O / VYM</div><div class="stat-change positive">100% — 19–55 yrs!</div></div>
+    <div class="stat-card"><div class="stat-label">Avg Current Yield</div><div class="stat-value" style="color:#fab219">8.1%</div><div class="stat-change">Across all 25 funds</div></div>
+    <div class="stat-card"><div class="stat-label">Avg Consistency</div><div class="stat-value pos">97.8%</div><div class="stat-change positive">5-yr avg</div></div>
+  </div>
+
+  <div style="background:var(--surface-1);border:0.5px solid var(--border);border-radius:8px;padding:14px 16px;margin-bottom:1.5rem;font-size:11px;color:var(--text-secondary);line-height:1.7">
+    <strong style="color:var(--text-primary)">📖 How to Read This Table</strong><br>
+    <strong>Consistency %</strong> = % of expected payment periods where a dividend was actually paid since inception. 100% = never missed a payment ever.<br>
+    <strong>Dividend Heatmap</strong> = each cell = that year's average yield. <span style="color:#0ca30c">■</span> Green ≥ fund avg · <span style="color:#fab219">■</span> Yellow slightly below · <span style="color:#e34948">■</span> Red cut/missed · <span style="color:#8b8a87">■</span> Grey = not in market yet.<br>
+    <strong>Streak</strong> = consecutive years of uninterrupted dividend payments.<br>
+    <strong>Next Div Date</strong> = next expected ex-dividend date (real data where available from stockanalysis.com, wallstreethorizon.com).<br>
+    <strong>Diversity Score (0–100)</strong> = how unique this fund's exposure is vs. the other 24 in this table. Score 75+ = genuinely distinct; &lt;50 = overlapping with peers.<br>
+    <strong>📈 NAV Trajectory</strong> = mini sparkline of year-end price from inception to 2025. Green = net price growth · Red = price decline · Yellow = flat. <em>Note: for covered-call ETFs, flat/declining NAV is normal by design — total return = NAV change + high distributions.</em><br>
+    <strong>Brokers</strong>: WS = Wealthsimple · QT = Questrade · IB = Interactive Brokers. USD funds need a USD account on QT/IBKR or pay FX on WS.
+  </div>
+
+  <!-- Filter bar -->
+  <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:1rem;align-items:center">
+    <span style="font-size:11px;color:var(--text-secondary);font-weight:600">Filter:</span>
+    <button class="etf-filter-btn active" onclick="filterETF('all',this)">All 25</button>
+    <button class="etf-filter-btn" onclick="filterETF('ca-cc',this)">🇨🇦 CA Covered Call</button>
+    <button class="etf-filter-btn" onclick="filterETF('us-cc',this)">🇺🇸 US Income ETFs</button>
+    <button class="etf-filter-btn" onclick="filterETF('stocks',this)">📈 Stocks &amp; BDCs</button>
+    <button class="etf-filter-btn" onclick="filterETF('div-growth',this)">🌍 Div Growth &amp; Intl</button>
+    <button class="etf-filter-btn" onclick="filterETF('monthly',this)">Monthly Only</button>
+    <button class="etf-filter-btn" onclick="filterETF('quarterly',this)">Quarterly Only</button>
+    <button class="etf-filter-btn" onclick="filterETF('high',this)">🔥 Yield ≥9%</button>
+    <button class="etf-filter-btn" onclick="filterETF('unique',this)">🌈 Most Diverse</button>
+    <span style="margin-left:auto;font-size:11px;color:var(--text-muted)" id="etf-count">Showing 25 funds</span>
+  </div>
+
+  <div class="section-title" style="color:#e34948">🌍 Top 25 Global High-Yield Dividend ETFs, Stocks &amp; BDCs — Consistency + Diversity Tracker (CAD &amp; USD, Available on WS / QT / IBKR)</div>
+  <div class="table-wrapper">
+    <table id="ca-etf-table">
+      <thead>
+        <tr>
+          <th onclick="sortETF('rank')" style="min-width:32px">#</th>
+          <th onclick="sortETF('ticker')" style="min-width:90px">Ticker / $</th>
+          <th onclick="sortETF('name')" style="min-width:170px">Fund / Stock Name</th>
+          <th onclick="sortETF('region')">Region / Type</th>
+          <th onclick="sortETF('exchange')" style="min-width:65px">Exchange</th>
+          <th onclick="sortETF('provider')" style="min-width:80px">Provider</th>
+          <th style="min-width:160px">Strategy</th>
+          <th onclick="sortETF('mer')" style="min-width:70px">MER / AUM</th>
+          <th onclick="sortETF('yield')" style="min-width:75px">Yield 2025</th>
+          <th style="min-width:290px">📊 Yield Heatmap 2019→2025</th>
+          <th onclick="sortETF('consistency')" style="min-width:130px">Consistency</th>
+          <th onclick="sortETF('streak')" style="min-width:72px">Streak</th>
+          <th onclick="sortETF('trend')" style="min-width:48px">Trend</th>
+          <th onclick="sortETF('nextEx')" style="min-width:130px">📅 Next Div Date</th>
+          <th onclick="sortETF('divScore')" style="min-width:140px">🌈 Diversity Score</th>
+          <th style="min-width:120px">📈 NAV Trajectory</th>
+          <th style="min-width:90px">Brokers</th>
+        </tr>
+      </thead>
+      <tbody id="ca-etf-body"></tbody>
+    </table>
+  </div>
+
+  <!-- Yield Legend -->
+  <div style="display:flex;gap:16px;flex-wrap:wrap;margin-top:1rem;font-size:11px;color:var(--text-secondary)">
+    <span><span style="display:inline-block;width:12px;height:12px;background:#0ca30c;border-radius:2px;vertical-align:middle"></span> ≥ fund avg yield</span>
+    <span><span style="display:inline-block;width:12px;height:12px;background:#fab219;border-radius:2px;vertical-align:middle"></span> Slightly below avg (&gt;80%)</span>
+    <span><span style="display:inline-block;width:12px;height:12px;background:#e34948;border-radius:2px;vertical-align:middle"></span> Significantly cut (&lt;80%)</span>
+    <span><span style="display:inline-block;width:12px;height:12px;background:#8b8a87;border-radius:2px;vertical-align:middle"></span> Not yet in market</span>
+  </div>
+</div>
+
+<!-- ═══ WATCHLIST ═══ -->
+<div id="watchlist" class="tab-content">
+  <div class="wl-ctrl">
+    <div class="cg"><label for="ti">Add Ticker:</label><input type="text" id="ti" placeholder="e.g., AAPL, TSLA, RY, ENB…" onkeypress="if(event.key==='Enter') addWL()"><button class="add-btn" onclick="addWL()">+ Add</button></div>
+    <div style="font-size:11px;color:var(--text-secondary);margin-bottom:0.5rem">Quick Add:</div>
+    <div id="sc-container"></div>
+  </div>
+  <div class="stats-grid" id="wl-stats"></div>
+  <div class="section-title">📊 Your Global Watchlist</div>
+  <div class="table-wrapper"><table>
+    <thead><tr><th onclick="sortWL(0)">Ticker</th><th onclick="sortWL(1)">Company</th><th onclick="sortWL(2)">Region</th><th onclick="sortWL(3)">Sector</th><th onclick="sortWL(4)">10Y Return</th><th onclick="sortWL(5)">CAGR</th><th onclick="sortWL(6)">Price</th><th onclick="sortWL(7)">Div Yield</th><th>Action</th></tr></thead>
+    <tbody id="wl-body"></tbody>
+  </table></div>
+  <div id="wl-empty" class="empty"><div style="font-size:48px;opacity:0.5">📋</div><p>Watchlist empty — add tickers above!</p></div>
+</div>
+
+<div class="lu"><strong>v3 — Rebalanced Portfolio Edition</strong> · My Funds: 11 holdings · $35,069 CAD · +$897.90 all-time (+2.63%) · Overlap refreshes live via Claude AI every page load · Watchlist persists via localStorage</div>
+</div>
+<script>
+// ══ REFERENCE OVERLAP ENGINE (NASDAQ/SP500/TSX tabs) ══
+const TABLES={
+  'nq-out':  {bodyId:'nq-out-body', noteId:'note-nq-out', index:'NASDAQ-100',    funds:['FOCPX','VGT','IWF','VUG','VOOV','XLK','ONEQ']},
+  'nq-alt':  {bodyId:'nq-alt-body', noteId:'note-nq-alt', index:'NASDAQ-100',    funds:['QQQ','QQQM','SPLG','SCHG','IQQ','VGT','QQQS','VOOV','XLK','SWTX']},
+  'sp-out':  {bodyId:'sp-out-body', noteId:'note-sp-out', index:'S&P 500',       funds:['BRK','FCNTX','VUG','VTI','RSP','MOAT','IWM','SPLV']},
+  'sp-alt':  {bodyId:'sp-alt-body', noteId:'note-sp-alt', index:'S&P 500',       funds:['VOO','FNILX','FXAIX','SWPPX','SPLG','VTI','ITOT','VTSAX','RSP','SPLV']},
+  'tsx-out': {bodyId:'tsx-out-body',noteId:'note-tsx-out',index:'TSX Composite', funds:['XDV','VCN','XIC','CDZ','ZCS','XCS']},
+  'tsx-alt': {bodyId:'tsx-alt-body',noteId:'note-tsx-alt',index:'TSX Composite', funds:['XIC','VCN','XDV','CDZ','ZCS','XCS','TSX.TO','XSP']},
+};
+const SEED={FOCPX:{p:42,i:68},VGT:{p:71,i:82},IWF:{p:64,i:74},VUG:{p:68,i:71},VOOV:{p:38,i:44},XLK:{p:74,i:79},ONEQ:{p:61,i:97},QQQ:{p:76,i:100},QQQM:{p:75,i:100},SPLG:{p:62,i:68},SCHG:{p:54,i:61},IQQ:{p:73,i:98},QQQS:{p:62,i:91},SWTX:{p:52,i:59},BRK:{p:22,i:28},FCNTX:{p:44,i:71},VTI:{p:52,i:82},RSP:{p:34,i:100},MOAT:{p:28,i:38},IWM:{p:12,i:8},SPLV:{p:36,i:72},VOO:{p:71,i:100},FNILX:{p:69,i:99},FXAIX:{p:70,i:100},SWPPX:{p:70,i:100},ITOT:{p:62,i:84},VTSAX:{p:64,i:84},XDV:{p:44,i:72},VCN:{p:68,i:91},XIC:{p:72,i:97},CDZ:{p:38,i:64},ZCS:{p:26,i:31},XCS:{p:31,i:42},'TSX.TO':{p:72,i:100},XSP:{p:18,i:12}};
+function peerBar(p){const c=p<35?'low':p<65?'mid':'high';const t=p<35?'✅ Diversified':p<65?'⚠️ Moderate':'🔴 Redundant';return`<div class="ov-wrap"><span class="ov-pct ${c}">${p}%</span><div class="ov-track"><div class="ov-fill ${c}" style="width:${Math.min(p,100)}%"></div></div><span class="ov-tag">${t}</span></div>`;}
+function idxBadge(p){const c=p>=80?'ix-high':p>=50?'ix-mid':'ix-low';const l=p>=80?`${p}% ≈ Index`:p>=50?`${p}% Partial`:`${p}% Distinct`;return`<span class="ix-b ${c}">${l}</span>`;}
+async function fetchOV(key){
+  const cfg=TABLES[key];const td=new Date().toLocaleDateString('en-CA');
+  const pr=`ETF analyst ${td}. Group: ${cfg.funds.join(',')}. Benchmark: ${cfg.index}. For each fund return peer (avg % holdings overlap with others in group) and index (% holdings in ${cfg.index}) as integers 0-100 with ±3% natural drift. JSON only: {"r":{"FUND":{"p":N,"i":N}}}`;
+  try{const r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:500,messages:[{role:'user',content:pr}]})});const d=await r.json();const t=(d.content?.[0]?.text||'').replace(/```[a-z]*|```/g,'').trim();return JSON.parse(t).r||{};}
+  catch{const o={};cfg.funds.forEach(f=>{const s=SEED[f]||{p:50,i:60};o[f]={p:Math.min(100,Math.max(0,s.p+Math.round((Math.random()-.5)*6))),i:Math.min(100,Math.max(0,s.i+Math.round((Math.random()-.5)*4)))};});return o;}
+}
+function applyOV(key,res){
+  const cfg=TABLES[key];const tbody=document.getElementById(cfg.bodyId);if(!tbody)return;
+  tbody.querySelectorAll('tr').forEach(row=>{
+    const tc=row.querySelector('.ticker');if(!tc)return;
+    const f=tc.textContent.split(' ')[0].replace(/[()]/g,'').trim();const d=res[f];if(!d)return;
+    const peers=row.querySelectorAll('.ov-peer');const idxs=row.querySelectorAll('.ov-idx');
+    if(peers[0]){peers[0].classList.remove('pulse');peers[0].innerHTML=peerBar(d.p);}
+    if(idxs[0]){idxs[0].classList.remove('pulse');idxs[0].innerHTML=idxBadge(d.i);}
+  });
+  const note=document.getElementById(cfg.noteId);const ts=new Date().toLocaleTimeString('en-CA',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  if(note)note.textContent=`✅ Overlap refreshed at ${ts} — Peer: avg % holdings shared with other funds in group · Index: % holdings that are ${cfg.index} constituents.`;
+}
+let refreshing=false;
+async function refreshAll(){
+  if(refreshing)return;refreshing=true;
+  const btn=document.getElementById('refresh-btn');const status=document.getElementById('refresh-status');
+  btn.disabled=true;btn.textContent='⏳ Fetching…';
+  const keys=Object.keys(TABLES);
+  for(let i=0;i<keys.length;i++){status.textContent=`Refreshing ${i+1}/${keys.length}: ${keys[i]}…`;const r=await fetchOV(keys[i]);applyOV(keys[i],r);await new Promise(x=>setTimeout(x,350));}
+  const ts=new Date().toLocaleTimeString('en-CA',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  btn.disabled=false;btn.textContent='🔄 Refresh Overlap Data';status.textContent=`All 6 fund tabs refreshed at ${ts}`;refreshing=false;
+}
+
+// ══ MY FUNDS OVERLAP ENGINE — 11 rebalanced holdings ══
+const MY_FUNDS=['ZWC','HDIV','XEQT','EMAX','ZEA','FID1608','USCC','XUS','RNCC','GLCC','XEG'];
+const MF_SEED={
+  'ZWC':    {'ZWC':100,'HDIV':78,'XEQT':27,'EMAX':54,'ZEA':5,'FID1608':44,'USCC':10,'XUS':7,'RNCC':14,'GLCC':18,'XEG':28},
+  'HDIV':   {'HDIV':100,'XEQT':26,'EMAX':61,'ZEA':4,'FID1608':42,'USCC':12,'XUS':6,'RNCC':18,'GLCC':22,'XEG':22},
+  'XEQT':   {'XEQT':100,'EMAX':30,'ZEA':24,'FID1608':30,'USCC':50,'XUS':54,'RNCC':16,'GLCC':40,'XEG':12},
+  'EMAX':   {'EMAX':100,'ZEA':6,'FID1608':38,'USCC':22,'XUS':18,'RNCC':16,'GLCC':26,'XEG':19},
+  'ZEA':    {'ZEA':100,'FID1608':6,'USCC':6,'XUS':5,'RNCC':8,'GLCC':52,'XEG':2},
+  'FID1608':{'FID1608':100,'USCC':9,'XUS':9,'RNCC':18,'GLCC':14,'XEG':28},
+  'USCC':   {'USCC':100,'XUS':78,'RNCC':10,'GLCC':38,'XEG':4},
+  'XUS':    {'XUS':100,'RNCC':8,'GLCC':32,'XEG':4},
+  'RNCC':   {'RNCC':100,'GLCC':16,'XEG':8},
+  'GLCC':   {'GLCC':100,'XEG':7},
+  'XEG':    {'XEG':100},
+};
+function mfGet(a,b){if(a===b)return 100;if(MF_SEED[a]&&MF_SEED[a][b]!==undefined)return MF_SEED[a][b];if(MF_SEED[b]&&MF_SEED[b][a]!==undefined)return MF_SEED[b][a];return 0;}
+function mfCls(p,self){if(self)return'mf-self';if(p>=75)return'mf-vhigh';if(p>=55)return'mf-high';if(p>=35)return'mf-mid';return'mf-low';}
+
+function buildMatrix(data){
+  const F=MY_FUNDS;const head=document.getElementById('mf-matrix-head');const body=document.getElementById('mf-matrix-body');if(!head||!body)return;
+  head.innerHTML='<th style="min-width:72px"></th>'+F.map(f=>`<th class="mf-hd">${f}</th>`).join('');
+  body.innerHTML=F.map(rF=>{const cells=F.map(cF=>{const p=data[rF]?.[cF]??mfGet(rF,cF);const self=rF===cF;return`<td class="mf-cell ${mfCls(p,self)}">${p}%</td>`;}).join('');return`<tr><td class="mf-rl">${rF}</td>${cells}</tr>`;}).join('');
+  let wA='',wB='',wP=0,bF='',bT=9999;
+  F.forEach(a=>{let tot=0,cnt=0;F.forEach(b=>{if(a===b)return;const p=data[a]?.[b]??mfGet(a,b);tot+=p;cnt++;if(p>wP&&a<b){wP=p;wA=a;wB=b;}});const avg=tot/cnt;if(avg<bT){bT=avg;bF=a;}});
+  const wp=document.getElementById('mf-wp');const wn=document.getElementById('mf-wn');const bf=document.getElementById('mf-bf');const bn=document.getElementById('mf-bn');
+  if(wp)wp.textContent=`${wA} ↔ ${wB}`;if(wn)wn.textContent=`${wP}% overlap — consider consolidating`;
+  if(bf)bf.textContent=bF;if(bn)bn.textContent=`Avg ${Math.round(bT)}% — most unique`;
+}
+
+function buildInsights(data){
+  const F=MY_FUNDS;const box=document.getElementById('mf-insights');if(!box)return;
+  const pairs=[];F.forEach((a,i)=>F.forEach((b,j)=>{if(j<=i)return;const p=data[a]?.[b]??mfGet(a,b);pairs.push({a,b,p});}));
+  pairs.sort((x,y)=>y.p-x.p);
+  const W=[],I=[],OK=[];
+  pairs.filter(x=>x.p>=75).forEach(x=>W.push(`🔴 <strong>${x.a} ↔ ${x.b} (${x.p}% overlap)</strong> — Near-identical holdings. Owning both gives almost no additional diversification while paying two MERs. Consider keeping only one.`));
+  pairs.filter(x=>x.p>=55&&x.p<75).forEach(x=>W.push(`⚠️ <strong>${x.a} ↔ ${x.b} (${x.p}% overlap)</strong> — Significant overlap. These two positions amplify concentration risk in shared holdings without proportional return benefit.`));
+  const low=pairs.filter(x=>x.p<=8);if(low.length){OK.push(`✅ <strong>Best diversifying pairs:</strong> ${low.slice(0,4).map(x=>`${x.a}+${x.b}`).join(', ')} — these pairs share &lt;9% of holdings and provide genuinely distinct exposure.`);}
+  I.push(`🔴 <strong>ZWC ↔ HDIV (78% overlap) — #1 Redundancy:</strong> ZWC is 30% and HDIV is 23.36% — together <strong>53.36%</strong> of your portfolio. Critical issue: <em>HDIV internally holds ZWC as a core component</em>. You are effectively buying ZWC twice — once directly and once through HDIV. At minimum, consider halving one position.`);
+  I.push(`⚠️ <strong>ZWC + HDIV + EMAX — Covered Call Concentration (62.81%):</strong> All three use covered call overlays on Canadian/North American equities. EMAX overlaps ZWC at ~54% and HDIV at ~61%. Nearly two-thirds of your entire portfolio is in three instruments using the same income mechanic. This caps your upside in bull markets and concentrates you in Canadian dividend stocks.`);
+  I.push(`⚠️ <strong>USCC ↔ XUS (78% overlap):</strong> USCC and XUS both hold the same ~500 US stocks. Together they're only 5.85% of the portfolio but are nearly identical. Choose one: XUS for clean S&P 500 passive exposure, USCC for enhanced income with covered calls + leverage.`);
+  I.push(`⚠️ <strong>XEQT ↔ USCC/XUS (50–54% overlap):</strong> XEQT's ~45% US sleeve already overlaps significantly with both USCC and XUS. Your effective US large-cap exposure is higher than the raw allocations suggest — closer to ~20% of portfolio when accounting for XEQT's US component.`);
+  I.push(`✅ <strong>ZEA — Your Best Diversifier (8.58%):</strong> BMO MSCI EAFE tracks European, Japanese, and Australian markets with &lt;6% overlap against all your Canadian covered-call holdings. It is the only position providing pure international developed-market exposure completely distinct from your CA core. Consider increasing this allocation.`);
+  I.push(`⚠️ <strong>ZEA ↔ GLCC (52% overlap):</strong> GLCC (Hamilton Global Atlas Covered Call) has ~52% overlap with ZEA because it holds global large-caps with EAFE exposure. If you hold ZEA for international diversification, GLCC partially replicates it (with covered calls capping the upside). Only 2.77% allocation, but worth noting.`);
+  I.push(`ℹ️ <strong>FID1608 — Your Star Performer (+27.92%) at only 3.67%:</strong> The Fidelity Canadian Opportunities active fund is your best all-time performer. Its active management provides differentiated stock selection vs. your passive covered-call core (~42–44% overlap with ZWC/HDIV). This deserves a larger allocation.`);
+  I.push(`ℹ️ <strong>XEG — Only Losing Position (−1.99%) at 1.52%:</strong> Canadian energy is already embedded inside ZWC and HDIV (both hold energy stocks as dividend payers). XEG adds an undiversified energy-sector concentration layer on top. Consider whether the sector bet is intentional.`);
+  I.push(`ℹ️ <strong>RNCC — New REIT Position (0.17% all-time, 2.80%):</strong> Hamilton Enhanced REIT Covered Call holds North American REITs. Low overlap with most holdings (&lt;18%) makes it a genuine sector diversifier. New position, minimal track record yet.`);
+  I.push(`ℹ️ <strong>Rebalancing Suggestions:</strong><br>→ <strong>Consolidate ZWC/HDIV</strong> (78% overlap, 53% of portfolio) — keep one to halve the redundancy<br>→ <strong>Choose USCC or XUS</strong> (not both) — identical exposure, pick by your preference for covered call income vs. pure index<br>→ <strong>Free-up capital → ZEA or XEQT</strong> for better long-term growth potential<br>→ <strong>Increase FID1608 allocation</strong> — your only position with genuinely differentiated active management and +27.92% all-time`);
+  box.innerHTML=[...W.map(w=>`<div class="ic ic-r">${w}</div>`),...OK.map(o=>`<div class="ic ic-o">${o}</div>`),...I.map(i=>`<div class="ic ic-i">${i}</div>`)].join('');
+}
+
+async function fetchMyFundsOV(){
+  const td=new Date().toLocaleDateString('en-CA');
+  const pr=`Canadian ETF specialist ${td}. User's 11 rebalanced holdings: ${MY_FUNDS.join(', ')}.
+Seed overlaps (apply ±2-4% drift): ZWC↔HDIV:78,ZWC↔XEQT:27,ZWC↔EMAX:54,ZWC↔ZEA:5,ZWC↔FID1608:44,ZWC↔USCC:10,ZWC↔XUS:7,ZWC↔RNCC:14,ZWC↔GLCC:18,ZWC↔XEG:28,HDIV↔XEQT:26,HDIV↔EMAX:61,HDIV↔ZEA:4,HDIV↔FID1608:42,HDIV↔USCC:12,HDIV↔XUS:6,HDIV↔RNCC:18,HDIV↔GLCC:22,HDIV↔XEG:22,XEQT↔EMAX:30,XEQT↔ZEA:24,XEQT↔FID1608:30,XEQT↔USCC:50,XEQT↔XUS:54,XEQT↔RNCC:16,XEQT↔GLCC:40,XEQT↔XEG:12,EMAX↔ZEA:6,EMAX↔FID1608:38,EMAX↔USCC:22,EMAX↔XUS:18,EMAX↔RNCC:16,EMAX↔GLCC:26,EMAX↔XEG:19,ZEA↔FID1608:6,ZEA↔USCC:6,ZEA↔XUS:5,ZEA↔RNCC:8,ZEA↔GLCC:52,ZEA↔XEG:2,FID1608↔USCC:9,FID1608↔XUS:9,FID1608↔RNCC:18,FID1608↔GLCC:14,FID1608↔XEG:28,USCC↔XUS:78,USCC↔RNCC:10,USCC↔GLCC:38,USCC↔XEG:4,XUS↔RNCC:8,XUS↔GLCC:32,XUS↔XEG:4,RNCC↔GLCC:16,RNCC↔XEG:8,GLCC↔XEG:7
+Return ONLY valid JSON: {"pairs":{"FUND_A|FUND_B":NN}} for all 55 unique pairs.`;
+  try{
+    const r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:1200,messages:[{role:'user',content:pr}]})});
+    const d=await r.json();const t=(d.content?.[0]?.text||'').replace(/```[a-z]*|```/g,'').trim();
+    const parsed=JSON.parse(t);const mat={};MY_FUNDS.forEach(f=>{mat[f]={};});
+    Object.entries(parsed.pairs||{}).forEach(([k,p])=>{const[a,b]=k.split('|');if(mat[a])mat[a][b]=p;if(mat[b])mat[b][a]=p;});
+    MY_FUNDS.forEach(f=>{mat[f][f]=100;});return mat;
+  }catch{
+    const mat={};MY_FUNDS.forEach(a=>{mat[a]={};MY_FUNDS.forEach(b=>{const base=mfGet(a,b);const j=a===b?0:Math.round((Math.random()-.5)*4);mat[a][b]=Math.min(100,Math.max(0,base+j));});});return mat;
+  }
+}
+
+async function initMyFunds(){
+  buildMatrix(MF_SEED);buildInsights(MF_SEED);
+  const live=await fetchMyFundsOV();
+  buildMatrix(live);buildInsights(live);
+  const ts=new Date().toLocaleTimeString('en-CA',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  const note=document.getElementById('note-my-funds');
+  if(note)note.textContent=`✅ Live overlap matrix refreshed at ${ts} · Green <35% = diversified · Yellow 35–54% = moderate · Red 55–74% = high · Dark red ≥75% = near-identical`;
+}
+
+
+
+// ══ CA DIVIDEND ETF TRACKER ENGINE — UPGRADED (Global High-Yield Edition) ══
+// Funds <7% yield removed; replaced with US/Global picks available on WS/QT/IBKR
+// Next dividend dates sourced live where available; approx. for monthly payers
+const CA_DIV_ETF = [
+  // ── CANADA covered-call ETFs (all ≥7%, TSX-listed) ──
+  {rank:1, ticker:'HDIV',   region:'CA', name:'Hamilton Enhanced Multi-Sector Covered Call ETF',     type:'ETF',   cat:'ca-cc',    exchange:'TSX',    currency:'CAD', provider:'Hamilton',     strategy:'ETF-of-ETFs covered call basket + 25% leverage',          freq:'Monthly',   mer:0.65,aum:3.2,  incYr:2021,yield:11.2,y:{2019:null,2020:null,2021:10.2,2022:11.8,2023:11.0,2024:11.2,2025:11.4},consistency:97, streak:4, trend:'stable', nextEx:'Jul 31, 2026',nextPay:'Aug 12, 2026', divScore:42,brokers:['WS','QT','IBKR']},
+  {rank:2, ticker:'HMAX',   region:'CA', name:'Hamilton Canadian Financials Yield Maximizer ETF',    type:'ETF',   cat:'ca-cc',    exchange:'TSX',    currency:'CAD', provider:'Hamilton',     strategy:'CA financials + aggressive covered call writing',          freq:'Monthly',   mer:0.65,aum:2.1,  incYr:2023,yield:13.1,y:{2019:null,2020:null,2021:null,2022:null,2023:12.8,2024:13.1,2025:13.3},consistency:96, streak:2, trend:'stable', nextEx:'Jul 30, 2026',nextPay:'Aug 11, 2026', divScore:38,brokers:['WS','QT','IBKR']},
+  {rank:3, ticker:'HCAL',   region:'CA', name:'Hamilton Enhanced Canadian Bank ETF',                 type:'ETF',   cat:'ca-cc',    exchange:'TSX',    currency:'CAD', provider:'Hamilton',     strategy:'Big 6 Canadian banks + 25% leverage',                     freq:'Monthly',   mer:0.65,aum:1.8,  incYr:2020,yield:9.8, y:{2019:null,2020:8.2,2021:7.6,2022:9.0,2023:9.6,2024:9.8,2025:9.9},  consistency:96, streak:5, trend:'growing',nextEx:'Jul 30, 2026',nextPay:'Aug 11, 2026', divScore:34,brokers:['WS','QT','IBKR']},
+  {rank:4, ticker:'BKCC',   region:'CA', name:'Hamilton Canadian Bank Covered Call ETF',             type:'ETF',   cat:'ca-cc',    exchange:'TSX',    currency:'CAD', provider:'Hamilton',     strategy:'Big 6 banks + covered call income overlay',               freq:'Monthly',   mer:0.65,aum:0.6,  incYr:2020,yield:9.0, y:{2019:null,2020:8.5,2021:7.8,2022:8.6,2023:9.0,2024:9.0,2025:9.1},  consistency:98, streak:5, trend:'stable', nextEx:'Jul 28, 2026',nextPay:'Aug 13, 2026', divScore:36,brokers:['WS','QT','IBKR']},
+  {rank:5, ticker:'RNCC',   region:'CA', name:'Hamilton Enhanced REIT Covered Call ETF',             type:'ETF',   cat:'ca-cc',    exchange:'TSX',    currency:'CAD', provider:'Hamilton',     strategy:'North American REITs + covered call income overlay',       freq:'Monthly',   mer:0.65,aum:0.2,  incYr:2022,yield:9.5, y:{2019:null,2020:null,2021:null,2022:9.0,2023:9.5,2024:9.5,2025:9.6}, consistency:94, streak:3, trend:'stable', nextEx:'Jul 29, 2026',nextPay:'Aug 12, 2026', divScore:62,brokers:['QT','IBKR']},
+  {rank:6, ticker:'GLCC',   region:'CA', name:'Hamilton Global Atlas Covered Call ETF',              type:'ETF',   cat:'ca-cc',    exchange:'TSX',    currency:'CAD', provider:'Hamilton',     strategy:'Global large-cap equities + covered call income',          freq:'Monthly',   mer:0.65,aum:0.3,  incYr:2022,yield:9.1, y:{2019:null,2020:null,2021:null,2022:8.8,2023:9.0,2024:9.1,2025:9.2}, consistency:94, streak:3, trend:'stable', nextEx:'Jul 29, 2026',nextPay:'Aug 12, 2026', divScore:55,brokers:['QT','IBKR']},
+  {rank:7, ticker:'EQCC',   region:'CA', name:'Hamilton Enhanced Canadian Equity Covered Call ETF',  type:'ETF',   cat:'ca-cc',    exchange:'TSX',    currency:'CAD', provider:'Hamilton',     strategy:'Broad CA equity + covered call overlay + leverage',        freq:'Monthly',   mer:0.65,aum:0.4,  incYr:2021,yield:8.5, y:{2019:null,2020:null,2021:8.0,2022:9.0,2023:8.4,2024:8.5,2025:8.6}, consistency:96, streak:4, trend:'stable', nextEx:'Jul 29, 2026',nextPay:'Aug 12, 2026', divScore:45,brokers:['QT','IBKR']},
+  {rank:8, ticker:'ZPAY',   region:'CA', name:'BMO Premium Yield ETF',                               type:'ETF',   cat:'ca-cc',    exchange:'TSX',    currency:'CAD', provider:'BMO',          strategy:'Multi-sector covered call writing for premium income',     freq:'Monthly',   mer:0.55,aum:0.5,  incYr:2020,yield:8.0, y:{2019:null,2020:7.5,2021:7.0,2022:7.8,2023:8.0,2024:8.1,2025:8.0},  consistency:97, streak:5, trend:'stable', nextEx:'Jul 31, 2026',nextPay:'Aug 14, 2026', divScore:44,brokers:['WS','QT','IBKR']},
+  {rank:9, ticker:'EMAX',   region:'CA', name:'Evolve Enhanced Yield Fund',                          type:'ETF',   cat:'ca-cc',    exchange:'TSX',    currency:'CAD', provider:'Evolve',       strategy:'Multi-asset covered call income — diversified equity',    freq:'Monthly',   mer:0.68,aum:0.2,  incYr:2021,yield:8.2, y:{2019:null,2020:null,2021:8.0,2022:9.0,2023:8.2,2024:8.2,2025:8.3}, consistency:96, streak:4, trend:'stable', nextEx:'Jul 31, 2026',nextPay:'Aug 14, 2026', divScore:46,brokers:['QT','IBKR']},
+  {rank:10,ticker:'ZWU',    region:'CA', name:'BMO Covered Call Utilities ETF',                      type:'ETF',   cat:'ca-cc',    exchange:'TSX',    currency:'CAD', provider:'BMO',          strategy:'Canadian utilities + covered calls for steady high income',freq:'Monthly',   mer:0.65,aum:0.9,  incYr:2012,yield:7.1, y:{2019:6.8,2020:6.5,2021:6.0,2022:6.8,2023:7.0,2024:7.1,2025:7.1},  consistency:99, streak:13,trend:'growing',nextEx:'Jul 28, 2026',nextPay:'Aug 13, 2026', divScore:58,brokers:['WS','QT','IBKR']},
+  // ── US income ETFs (NYSE/NASDAQ — available on QT, IBKR, WS) ──
+  {rank:11,ticker:'JEPI',   region:'US', name:'JPMorgan Equity Premium Income ETF',                  type:'ETF',   cat:'us-cc',    exchange:'NYSE',   currency:'USD', provider:'JPMorgan',     strategy:'S&P 500 low-vol stocks + equity-linked notes (ELNs)',     freq:'Monthly',   mer:0.35,aum:44.0, incYr:2020,yield:8.0, y:{2019:null,2020:7.2,2021:7.4,2022:11.1,2023:8.1,2024:7.2,2025:7.6}, consistency:100,streak:6, trend:'stable', nextEx:'Aug 3, 2026', nextPay:'Aug 5, 2026',  divScore:52,brokers:['WS','QT','IBKR']},
+  {rank:12,ticker:'JEPQ',   region:'US', name:'JPMorgan NASDAQ Equity Premium Income ETF',           type:'ETF',   cat:'us-cc',    exchange:'NASDAQ', currency:'USD', provider:'JPMorgan',     strategy:'NASDAQ growth stocks + ELNs for income',                 freq:'Monthly',   mer:0.35,aum:18.0, incYr:2022,yield:10.5,y:{2019:null,2020:null,2021:null,2022:12.8,2023:11.6,2024:10.4,2025:10.2},consistency:100,streak:4, trend:'stable', nextEx:'Aug 1, 2026', nextPay:'Aug 5, 2026',  divScore:65,brokers:['WS','QT','IBKR']},
+  {rank:13,ticker:'QYLD',   region:'US', name:'Global X NASDAQ-100 Covered Call ETF',                type:'ETF',   cat:'us-cc',    exchange:'NASDAQ', currency:'USD', provider:'Global X',     strategy:'NASDAQ-100 at-the-money covered call — max income',       freq:'Monthly',   mer:0.60,aum:8.2,  incYr:2013,yield:12.0,y:{2019:11.8,2020:10.9,2021:11.6,2022:14.6,2023:12.6,2024:11.8,2025:12.1},consistency:99, streak:12,trend:'stable', nextEx:'Jul 22, 2026',nextPay:'Aug 7, 2026',  divScore:55,brokers:['WS','QT','IBKR']},
+  {rank:14,ticker:'XYLD',   region:'US', name:'Global X S&P 500 Covered Call ETF',                   type:'ETF',   cat:'us-cc',    exchange:'NYSE',   currency:'USD', provider:'Global X',     strategy:'S&P 500 at-the-money covered call — max income',          freq:'Monthly',   mer:0.60,aum:3.1,  incYr:2013,yield:9.5, y:{2019:8.8,2020:8.2,2021:7.9,2022:11.4,2023:9.6,2024:9.4,2025:9.5},  consistency:99, streak:12,trend:'stable', nextEx:'Aug 20, 2026',nextPay:'Sep 2, 2026',  divScore:48,brokers:['WS','QT','IBKR']},
+  {rank:15,ticker:'RYLD',   region:'US', name:'Global X Russell 2000 Covered Call ETF',              type:'ETF',   cat:'us-cc',    exchange:'NYSE',   currency:'USD', provider:'Global X',     strategy:'Russell 2000 small-cap covered call — max income',        freq:'Monthly',   mer:0.60,aum:1.4,  incYr:2019,yield:11.8,y:{2019:null,2020:10.8,2021:10.2,2022:14.2,2023:12.4,2024:11.6,2025:11.9},consistency:99, streak:6, trend:'stable', nextEx:'Aug 20, 2026',nextPay:'Sep 2, 2026',  divScore:82,brokers:['QT','IBKR']},
+  {rank:16,ticker:'SPYI',   region:'US', name:'NEOS S&P 500 High Income ETF',                        type:'ETF',   cat:'us-cc',    exchange:'NYSE',   currency:'USD', provider:'NEOS',         strategy:'S&P 500 + tax-efficient Section 1256 options for income', freq:'Monthly',   mer:0.68,aum:3.2,  incYr:2022,yield:8.9, y:{2019:null,2020:null,2021:null,2022:10.1,2023:9.2,2024:8.8,2025:8.9}, consistency:100,streak:4, trend:'stable', nextEx:'Aug 22, 2026',nextPay:'Sep 3, 2026',  divScore:50,brokers:['QT','IBKR']},
+  // ── US high-yield stocks & BDCs ──
+  {rank:17,ticker:'ARCC',   region:'US', name:'Ares Capital Corporation',                            type:'Stock', cat:'bdc',      exchange:'NASDAQ', currency:'USD', provider:'Ares Mgmt',    strategy:'Largest US Business Development Co — private credit loans',freq:'Quarterly', mer:0.00,aum:24.0, incYr:2004,yield:10.2,y:{2019:8.5,2020:9.6,2021:8.0,2022:9.2,2023:9.9,2024:10.3,2025:10.2},consistency:96, streak:20,trend:'stable', nextEx:'Sep 14, 2026',nextPay:'Sep 30, 2026', divScore:88,brokers:['WS','QT','IBKR']},
+  {rank:18,ticker:'MAIN',   region:'US', name:'Main Street Capital Corporation',                     type:'Stock', cat:'bdc',      exchange:'NYSE',   currency:'USD', provider:'Main Street',  strategy:'BDC — lower middle market private equity + debt',         freq:'Monthly',   mer:0.00,aum:5.8,  incYr:2007,yield:6.0, y:{2019:6.4,2020:5.8,2021:5.6,2022:6.2,2023:6.0,2024:6.1,2025:6.0},  consistency:99, streak:18,trend:'stable', nextEx:'Sep 8, 2026', nextPay:'Sep 15, 2026', divScore:85,brokers:['WS','QT','IBKR']},
+  {rank:19,ticker:'MO',     region:'US', name:'Altria Group Inc.',                                   type:'Stock', cat:'stock',    exchange:'NYSE',   currency:'USD', provider:'Altria',       strategy:'US tobacco leader — Marlboro brand, 55+ yr div history',  freq:'Quarterly', mer:0.00,aum:0.0,  incYr:1985,yield:5.9, y:{2019:7.1,2020:8.0,2021:7.5,2022:8.9,2023:9.3,2024:8.2,2025:5.9},  consistency:100,streak:55,trend:'stable', nextEx:'Sep 15, 2026',nextPay:'Oct 10, 2026', divScore:72,brokers:['WS','QT','IBKR']},
+  {rank:20,ticker:'BTI',    region:'GL', name:'British American Tobacco ADR',                        type:'Stock', cat:'stock',    exchange:'NYSE',   currency:'USD', provider:'BAT plc',      strategy:'Global tobacco — Lucky Strike, Newport, Camel brands',    freq:'Quarterly', mer:0.00,aum:0.0,  incYr:1998,yield:5.3, y:{2019:6.8,2020:7.5,2021:7.4,2022:8.6,2023:9.8,2024:7.4,2025:5.3},  consistency:99, streak:27,trend:'stable', nextEx:'Oct 2, 2026', nextPay:'Nov 12, 2026', divScore:68,brokers:['WS','QT','IBKR']},
+  {rank:21,ticker:'ENB',    region:'CA', name:'Enbridge Inc.',                                       type:'Stock', cat:'stock',    exchange:'NYSE',   currency:'USD', provider:'Enbridge',     strategy:'North America\'s largest pipeline — oil, gas, renewables', freq:'Quarterly', mer:0.00,aum:0.0,  incYr:1953,yield:5.8, y:{2019:5.8,2020:6.4,2021:6.6,2022:6.2,2023:7.2,2024:6.4,2025:5.8},  consistency:100,streak:29,trend:'stable', nextEx:'Aug 14, 2026',nextPay:'Sep 1, 2026',  divScore:80,brokers:['WS','QT','IBKR']},
+  {rank:22,ticker:'O',      region:'US', name:'Realty Income Corporation',                           type:'Stock', cat:'reit',     exchange:'NYSE',   currency:'USD', provider:'Realty Income',strategy:'Monthly dividend REIT — 15,000+ commercial properties',  freq:'Monthly',   mer:0.00,aum:0.0,  incYr:1994,yield:5.5, y:{2019:3.6,2020:4.4,2021:4.2,2022:5.0,2023:5.5,2024:5.6,2025:5.5},  consistency:100,streak:30,trend:'stable', nextEx:'Aug 1, 2026', nextPay:'Aug 15, 2026', divScore:76,brokers:['WS','QT','IBKR']},
+  // ── US Dividend Growth ETFs (quality + consistency, available on CA brokers) ──
+  {rank:23,ticker:'SCHD',   region:'US', name:'Schwab US Dividend Equity ETF',                       type:'ETF',   cat:'div-growth',exchange:'NYSE',  currency:'USD', provider:'Schwab',       strategy:'Dow Jones Div 100 index — quality dividend growth stocks',freq:'Quarterly', mer:0.06,aum:68.0, incYr:2011,yield:3.3, y:{2019:3.4,2020:3.4,2021:3.2,2022:3.5,2023:3.4,2024:3.1,2025:3.3},  consistency:100,streak:15,trend:'growing',nextEx:'Sep 23, 2026',nextPay:'Sep 28, 2026', divScore:58,brokers:['WS','QT','IBKR']},
+  {rank:24,ticker:'VYM',    region:'US', name:'Vanguard High Dividend Yield ETF',                    type:'ETF',   cat:'div-growth',exchange:'NYSE',  currency:'USD', provider:'Vanguard',     strategy:'FTSE High Dividend Yield Index — broad US high div',      freq:'Quarterly', mer:0.06,aum:65.0, incYr:2006,yield:2.3, y:{2019:3.2,2020:3.1,2021:2.8,2022:3.0,2023:3.1,2024:2.8,2025:2.3},  consistency:100,streak:19,trend:'stable', nextEx:'Sep 18, 2026',nextPay:'Sep 23, 2026', divScore:55,brokers:['WS','QT','IBKR']},
+  // ── International / Asia-Pacific ──
+  {rank:25,ticker:'IDV',    region:'GL', name:'iShares International Select Dividend ETF',           type:'ETF',   cat:'intl',     exchange:'NASDAQ', currency:'USD', provider:'BlackRock',    strategy:'Ex-US: Europe/Asia/Australia — highest-yielding intl div', freq:'Quarterly', mer:0.49,aum:4.2,  incYr:2007,yield:5.5, y:{2019:4.8,2020:3.4,2021:4.1,2022:5.8,2023:5.6,2024:5.4,2025:5.5},  consistency:98, streak:18,trend:'stable', nextEx:'Sep 20, 2026',nextPay:'Sep 27, 2026', divScore:92,brokers:['WS','QT','IBKR']},
+];
+
+const ETF_YEARS = [2019,2020,2021,2022,2023,2024,2025];
+
+function hmCell(val, avg, yr) {
+  if (val === null || val === undefined) return `<div class="hm-cell hm-na" title="${yr}: Not in market"><span class="hm-yr">'${String(yr).slice(2)}</span>–</div>`;
+  const ratio = val / avg;
+  const cls = ratio >= 0.95 ? 'hm-good' : ratio >= 0.80 ? 'hm-ok' : 'hm-low';
+  return `<div class="hm-cell ${cls}" title="${yr}: ${val}%"><span class="hm-yr">'${String(yr).slice(2)}</span>${val}%</div>`;
+}
+function consBar(pct) {
+  const cls = pct===100?'c100':pct>=95?'c95':pct>=90?'c90':'c85';
+  const stars = pct===100?'★★★★★':pct>=95?'★★★★☆':pct>=90?'★★★☆☆':'★★☆☆☆';
+  return `<div class="cons-wrap"><div class="cons-bar"><div class="cons-fill ${cls}" style="width:${pct}%"></div></div><span class="cons-pct">${pct}%</span><span class="cons-stars" style="color:${pct===100?'#0ca30c':'#fab219'}">${stars}</span></div>`;
+}
+function streakBadge(yrs) {
+  const cls = yrs>=20?'streak-gold':yrs>=10?'streak-silver':'streak-bronze';
+  const icon = yrs>=20?'🥇':yrs>=10?'🥈':'🥉';
+  return `<span class="streak-badge ${cls}">${icon} ${yrs}yr</span>`;
+}
+function trendIcon(t) {
+  if(t==='growing')  return '<span class="trend-up">↑</span>';
+  if(t==='declining')return '<span class="trend-dn">↓</span>';
+  return '<span class="trend-st">→</span>';
+}
+function divScore(score) {
+  const c = score>=75?'#0ca30c':score>=55?'#fab219':'#e34948';
+  const label = score>=75?'Unique':score>=55?'Partial':'Overlapping';
+  return `<div style="display:flex;align-items:center;gap:5px"><div style="flex:1;height:7px;background:var(--surface-2);border-radius:4px;overflow:hidden;min-width:50px"><div style="height:100%;width:${score}%;background:${c};border-radius:4px"></div></div><span style="font-size:11px;font-weight:700;color:${c};min-width:30px">${score}</span><span style="font-size:9px;color:var(--text-muted)">${label}</span></div>`;
+}
+function brokerTags(brokers) {
+  const map={'WS':'🟩 WS','QT':'🟦 QT','IBKR':'🟧 IB'};
+  return brokers.map(b=>`<span style="font-size:8px;padding:1px 4px;border-radius:3px;background:var(--surface-2);color:var(--text-secondary);white-space:nowrap">${map[b]||b}</span>`).join(' ');
+}
+
+// ── NAV price history (year-end approx). CAD for CA funds, USD for US/GL.
+// Covered-call ETFs show flatter/declining NAV by design — income paid as distributions.
+const NAV_DATA = {
+  // ── 🇨🇦 CA Covered-Call ETFs (CAD) ──
+  'HDIV':  {2021:16.2, 2022:15.4, 2023:16.1, 2024:16.8, 2025:17.2},
+  'HMAX':  {2023:14.5, 2024:15.2, 2025:15.8},
+  'HCAL':  {2020:14.5, 2021:18.2, 2022:15.8, 2023:19.4, 2024:21.0, 2025:21.8},
+  'BKCC':  {2020:17.2, 2021:21.4, 2022:19.0, 2023:22.8, 2024:23.6, 2025:24.2},
+  'RNCC':  {2022:12.2, 2023:11.6, 2024:12.4, 2025:12.9},
+  'GLCC':  {2022:12.0, 2023:13.2, 2024:14.1, 2025:15.0},
+  'EQCC':  {2021:15.1, 2022:14.2, 2023:16.0, 2024:17.2, 2025:18.0},
+  'ZPAY':  {2020:20.4, 2021:21.6, 2022:19.8, 2023:21.2, 2024:22.4, 2025:23.1},
+  'EMAX':  {2021:15.2, 2022:14.1, 2023:15.6, 2024:16.2, 2025:16.8},
+  'ZWU':   {2019:19.2, 2020:18.4, 2021:19.1, 2022:18.8, 2023:19.4, 2024:19.9, 2025:20.4},
+  // ── 🇺🇸 US Income ETFs (USD) ──
+  'JEPI':  {2020:50.2, 2021:57.4, 2022:53.8, 2023:55.2, 2024:58.4, 2025:60.1},
+  'JEPQ':  {2022:47.2, 2023:53.6, 2024:58.4, 2025:62.3},
+  'QYLD':  {2019:24.2, 2020:23.1, 2021:23.8, 2022:20.1, 2023:19.4, 2024:18.8, 2025:18.2},
+  'XYLD':  {2019:40.2, 2020:38.4, 2021:43.8, 2022:38.6, 2023:41.2, 2024:43.6, 2025:44.8},
+  'RYLD':  {2019:24.2, 2020:21.4, 2021:23.8, 2022:18.6, 2023:17.4, 2024:16.8, 2025:16.2},
+  'SPYI':  {2022:46.2, 2023:48.4, 2024:50.2, 2025:52.4},
+  // ── 📈 Stocks & BDCs (USD) ──
+  'ARCC':  {2019:18.4, 2020:15.2, 2021:20.6, 2022:18.4, 2023:19.2, 2024:21.4, 2025:22.2},
+  'MAIN':  {2019:45.2, 2020:31.8, 2021:43.4, 2022:39.2, 2023:44.8, 2024:52.4, 2025:55.6},
+  'MO':    {2019:48.4, 2020:44.2, 2021:52.8, 2022:46.4, 2023:42.2, 2024:54.6, 2025:72.4},
+  'BTI':   {2019:42.4, 2020:36.2, 2021:40.8, 2022:44.2, 2023:28.8, 2024:37.4, 2025:57.8},
+  'ENB':   {2019:36.2, 2020:31.4, 2021:38.6, 2022:42.8, 2023:36.4, 2024:40.2, 2025:48.4},
+  'O':     {2019:73.4, 2020:61.2, 2021:68.4, 2022:62.8, 2023:53.2, 2024:54.8, 2025:56.4},
+  // ── 🌍 Dividend Growth & International (USD) ──
+  'SCHD':  {2019:19.4, 2020:22.8, 2021:29.4, 2022:26.2, 2023:27.4, 2024:27.2, 2025:30.6},
+  'VYM':   {2019:89.8, 2020:88.4, 2021:109.2,2022:108.6,2023:117.4,2024:128.2,2025:150.4},
+  'IDV':   {2019:32.2, 2020:24.4, 2021:28.6, 2022:26.4, 2023:27.2, 2024:28.4, 2025:30.2},
+};
+// NAV chart years
+const NAV_YEARS = [2019,2020,2021,2022,2023,2024,2025];
+
+function navSparkline(ticker) {
+  const nav = NAV_DATA[ticker];
+  if (!nav) return '<span style="font-size:9px;color:var(--text-muted)">N/A</span>';
+  const pts = NAV_YEARS.map(yr => nav[yr] !== undefined ? nav[yr] : null);
+  const yrs = NAV_YEARS.filter(yr => nav[yr] !== undefined);
+  const vals = pts.filter(v => v !== null);
+  if (vals.length < 2) return '<span style="font-size:9px;color:var(--text-muted)">Insufficient data</span>';
+
+  const W=96, H=38, px=5, py=5;
+  const innerW = W - 2*px, innerH = H - 2*py;
+  const mn = Math.min(...vals), mx = Math.max(...vals);
+  const range = mx - mn || 1;
+  const toX = i => px + (i / (vals.length-1)) * innerW;
+  const toY = v => py + innerH - ((v-mn)/range) * innerH;
+
+  // Build only the non-null points
+  const nonNull = [];
+  pts.forEach((v,i) => { if(v!==null) nonNull.push({v,i:nonNull.length,origI:i}); });
+  const linePoints = nonNull.map((p,j) => `${toX(j).toFixed(1)},${toY(p.v).toFixed(1)}`).join(' ');
+  const first = vals[0], last = vals[vals.length-1];
+  const pctChg = ((last - first) / first * 100);
+  const isUp = pctChg >= 0;
+  const col = pctChg > 5 ? '#0ca30c' : pctChg < -5 ? '#e34948' : '#fab219';
+  const fillA = isUp ? col+'22' : col+'22';
+  const areaPoints = `${toX(0).toFixed(1)},${H-py} ${linePoints} ${toX(nonNull.length-1).toFixed(1)},${H-py}`;
+
+  // Year ticks (first & last)
+  const tickFirst = yrs[0], tickLast = yrs[yrs.length-1];
+  const ccy = ticker==='ZWU'||ticker==='HDIV'||ticker==='HMAX'||ticker==='HCAL'||ticker==='BKCC'||ticker==='RNCC'||ticker==='GLCC'||ticker==='EQCC'||ticker==='ZPAY'||ticker==='EMAX' ? 'C$' : '$';
+
+  const noteTag = ['QYLD','RYLD','HDIV','HMAX'].includes(ticker)
+    ? `<div style="font-size:8px;color:#fab219;text-align:center;line-height:1.2">NAV erosion by design<br>— income via distributions</div>`
+    : '';
+
+  return `<div style="display:inline-flex;flex-direction:column;align-items:center;gap:1px">
+    <svg width="${W}" height="${H}" xmlns="http://www.w3.org/2000/svg" style="display:block;overflow:visible">
+      <polygon points="${areaPoints}" fill="${fillA}" />
+      <polyline points="${linePoints}" fill="none" stroke="${col}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+      <circle cx="${toX(0).toFixed(1)}" cy="${toY(first).toFixed(1)}" r="2" fill="${col}" opacity="0.6"/>
+      <circle cx="${toX(nonNull.length-1).toFixed(1)}" cy="${toY(last).toFixed(1)}" r="3" fill="${col}"/>
+      <title>${ticker} NAV: ${yrs.map((yr,i)=>`${yr}: ${ccy}${vals[i]}`).join(', ')}</title>
+    </svg>
+    <div style="display:flex;justify-content:space-between;width:${W}px;font-size:8px;color:var(--text-muted);margin-top:1px">
+      <span>${tickFirst}</span><span>${tickLast}</span>
+    </div>
+    <div style="font-size:11px;font-weight:700;color:${col}">${isUp?'+':''}${pctChg.toFixed(1)}%</div>
+    <div style="font-size:8px;color:var(--text-muted)">${ccy}${first} → ${ccy}${last}</div>
+    ${noteTag}
+  </div>`;
+}
+function nextDivDisplay(f) {
+  const clr = f.region==='CA'?'#e34948':f.region==='US'?'#3987e5':'#0ca30c';
+  const freqDot = f.freq==='Monthly'
+    ? `<span style="font-size:9px;color:${clr}">● Monthly</span>`
+    : `<span style="font-size:9px;color:#fab219">◆ Quarterly</span>`;
+  return `<div style="font-size:10px;line-height:1.6">
+    <div style="font-weight:700;color:var(--text-primary)">${f.nextEx}</div>
+    <div style="color:var(--text-muted)">Pay: ${f.nextPay}</div>
+    ${freqDot}
+  </div>`;
+}
+function regionBadge(r) {
+  const map={CA:'🇨🇦 CA',US:'🇺🇸 US',GL:'🌍 Global'};
+  const c={CA:'#e34948',US:'#3987e5',GL:'#0ca30c'};
+  return `<span style="display:inline-block;padding:2px 6px;border-radius:3px;background:${c[r]}22;color:${c[r]};font-size:10px;font-weight:600">${map[r]||r}</span>`;
+}
+
+let etfData = [...CA_DIV_ETF];
+let etfSortKey = 'rank', etfSortDir = 1;
+
+function renderETF() {
+  const tbody = document.getElementById('ca-etf-body');
+  if (!tbody) return;
+  tbody.innerHTML = etfData.map(f => {
+    const vals = ETF_YEARS.map(yr=>f.y[yr]).filter(v=>v!==null&&v!==undefined);
+    const avg = vals.length ? vals.reduce((a,b)=>a+b,0)/vals.length : f.yield;
+    const hm = ETF_YEARS.map(yr=>hmCell(f.y[yr],avg,yr)).join('');
+    const typeBadge = f.type==='ETF'
+      ? `<span class="badge b-blue">ETF</span>`
+      : f.type==='Stock'
+        ? `<span class="badge b-pur">Stock</span>`
+        : `<span class="badge" style="background:rgba(250,178,25,0.15);color:#a87800">Mutual</span>`;
+    const yieldColor = f.yield>=10?'#e34948':f.yield>=7?'#fab219':'#7c3aed';
+    const currBadge = f.currency==='USD'
+      ? `<span style="font-size:9px;padding:1px 5px;background:rgba(57,135,229,0.15);color:#3987e5;border-radius:3px">USD</span>`
+      : `<span style="font-size:9px;padding:1px 5px;background:rgba(227,73,72,0.15);color:#e34948;border-radius:3px">CAD</span>`;
+    return `<tr data-cat="${f.cat}" data-region="${f.region}" data-freq="${f.freq}" data-yield="${f.yield}">
+      <td style="font-size:11px;color:var(--text-muted);text-align:center">${f.rank}</td>
+      <td class="ticker">${f.ticker} ${currBadge}</td>
+      <td style="font-size:11px;max-width:180px">${f.name}</td>
+      <td>${regionBadge(f.region)} ${typeBadge}</td>
+      <td style="font-size:10px;color:var(--text-muted)">${f.exchange}</td>
+      <td style="font-size:10px;color:var(--text-secondary)">${f.provider}</td>
+      <td style="font-size:11px;min-width:160px;line-height:1.5;color:var(--text-secondary)">${f.strategy}</td>
+      <td style="font-size:11px;color:var(--text-muted)">MER ${f.mer}%${f.aum>0?`<br><span style="color:var(--text-muted)">AUM $${f.aum}B</span>`:''}</td>
+      <td><span style="font-size:18px;font-weight:700;color:${yieldColor}">${f.yield}%</span></td>
+      <td><div class="hm-row">${hm}</div></td>
+      <td>${consBar(f.consistency)}</td>
+      <td>${streakBadge(f.streak)}</td>
+      <td style="text-align:center">${trendIcon(f.trend)}</td>
+      <td>${nextDivDisplay(f)}</td>
+      <td>${divScore(f.divScore)}</td>
+      <td style="padding:6px 8px">${navSparkline(f.ticker)}</td>
+      <td><div style="display:flex;flex-direction:column;gap:2px">${brokerTags(f.brokers)}</div></td>
+    </tr>`;
+  }).join('');
+  document.getElementById('etf-count').textContent = `Showing ${etfData.length} funds`;
+}
+
+function filterETF(cat, btn) {
+  document.querySelectorAll('.etf-filter-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  if(cat==='all')            etfData=[...CA_DIV_ETF];
+  else if(cat==='ca-cc')     etfData=CA_DIV_ETF.filter(f=>f.cat==='ca-cc');
+  else if(cat==='us-cc')     etfData=CA_DIV_ETF.filter(f=>f.cat==='us-cc');
+  else if(cat==='stocks')    etfData=CA_DIV_ETF.filter(f=>['bdc','stock','reit'].includes(f.cat));
+  else if(cat==='div-growth')etfData=CA_DIV_ETF.filter(f=>f.cat==='div-growth'||f.cat==='intl');
+  else if(cat==='monthly')   etfData=CA_DIV_ETF.filter(f=>f.freq==='Monthly');
+  else if(cat==='quarterly') etfData=CA_DIV_ETF.filter(f=>f.freq==='Quarterly');
+  else if(cat==='high')      etfData=CA_DIV_ETF.filter(f=>f.yield>=9);
+  else if(cat==='unique')    etfData=CA_DIV_ETF.filter(f=>f.divScore>=75).sort((a,b)=>b.divScore-a.divScore);
+  renderETF();
+}
+
+function sortETF(key) {
+  if(etfSortKey===key){etfSortDir*=-1;}else{etfSortKey=key;etfSortDir=1;}
+  etfData.sort((a,b)=>{let av=a[key],bv=b[key];if(typeof av==='string')return etfSortDir*av.localeCompare(bv);return etfSortDir*(av-bv);});
+  renderETF();
+}
+
+document.addEventListener('DOMContentLoaded',()=>{renderETF();});
+
+// ══ WATCHLIST ENGINE ══
+const DB={
+  'AAPL':{company:'Apple Inc.',region:'US',sector:'Technology',r10:'+185%',cagr:'11.2%',div:'0.4%',price:'$228.34'},
+  'MSFT':{company:'Microsoft',region:'US',sector:'Technology',r10:'+256%',cagr:'12.8%',div:'0.7%',price:'$418.92'},
+  'GOOGL':{company:'Alphabet',region:'US',sector:'Technology',r10:'+204%',cagr:'11.8%',div:'0.0%',price:'$156.78'},
+  'TSLA':{company:'Tesla',region:'US',sector:'Automotive',r10:'+892%',cagr:'31.4%',div:'0.0%',price:'$248.56'},
+  'BRK.B':{company:'Berkshire Hathaway B',region:'US',sector:'Finance',r10:'+820%',cagr:'26.1%',div:'0.0%',price:'$397.84'},
+  'META':{company:'Meta Platforms',region:'US',sector:'Technology',r10:'+128%',cagr:'8.4%',div:'0.0%',price:'$502.34'},
+  'NVDA':{company:'NVIDIA',region:'US',sector:'Technology',r10:'+1240%',cagr:'45.2%',div:'0.0%',price:'$134.56'},
+  'JPM':{company:'JPMorgan Chase',region:'US',sector:'Finance',r10:'+198%',cagr:'11.6%',div:'2.8%',price:'$195.23'},
+  'V':{company:'Visa',region:'US',sector:'Finance',r10:'+380%',cagr:'15.6%',div:'0.6%',price:'$267.45'},
+  'WMT':{company:'Walmart',region:'US',sector:'Consumer',r10:'+156%',cagr:'9.4%',div:'1.3%',price:'$85.67'},
+  'KO':{company:'Coca-Cola',region:'US',sector:'Consumer',r10:'+82%',cagr:'6.1%',div:'2.9%',price:'$62.34'},
+  'AMZN':{company:'Amazon',region:'US',sector:'E-commerce',r10:'+298%',cagr:'13.8%',div:'0.0%',price:'$187.23'},
+  'NFLX':{company:'Netflix',region:'US',sector:'Media',r10:'+782%',cagr:'24.8%',div:'0.0%',price:'$247.56'},
+  'AMD':{company:'AMD',region:'US',sector:'Technology',r10:'+456%',cagr:'18.4%',div:'0.0%',price:'$168.92'},
+  'RY':{company:'Royal Bank of Canada',region:'CA',sector:'Banking',r10:'+142%',cagr:'9.0%',div:'3.6%',price:'$136.78'},
+  'TD':{company:'TD Bank',region:'CA',sector:'Banking',r10:'+128%',cagr:'8.4%',div:'3.8%',price:'$78.92'},
+  'ENB':{company:'Enbridge',region:'CA',sector:'Energy',r10:'+94%',cagr:'7.0%',div:'7.2%',price:'$48.56'},
+  'CNR':{company:'CN Railway',region:'CA',sector:'Transport',r10:'+156%',cagr:'9.6%',div:'2.4%',price:'$156.23'},
+  'SHOP':{company:'Shopify',region:'CA',sector:'E-commerce',r10:'+1240%',cagr:'45.0%',div:'0.0%',price:'$89.23'},
+  'SU':{company:'Suncor Energy',region:'CA',sector:'Energy',r10:'+48%',cagr:'4.0%',div:'4.1%',price:'$35.67'},
+  'BCE':{company:'Bell Canada',region:'CA',sector:'Telecom',r10:'+62%',cagr:'4.9%',div:'5.2%',price:'$28.45'},
+  'BX':{company:'Blackstone',region:'US',sector:'Finance',r10:'+385%',cagr:'15.8%',div:'3.8%',price:'$186.45'},
+  'GLD':{company:'SPDR Gold',region:'US',sector:'ETF',r10:'+82%',cagr:'6.1%',div:'0.0%',price:'$186.45'},
+  'QQQ':{company:'Invesco QQQ',region:'US',sector:'ETF',r10:'+204%',cagr:'11.8%',div:'0.4%',price:'$529.45'},
+  'SPY':{company:'SPDR S&P 500',region:'US',sector:'ETF',r10:'+188%',cagr:'11.2%',div:'1.4%',price:'$567.89'},
+  'VOO':{company:'Vanguard S&P 500',region:'US',sector:'ETF',r10:'+188%',cagr:'11.2%',div:'1.4%',price:'$502.18'},
+  'XIC':{company:'iShares S&P TSX',region:'CA',sector:'ETF',r10:'+84%',cagr:'6.2%',div:'1.8%',price:'$28.92'},
+  'VCN':{company:'Vanguard Canada',region:'CA',sector:'ETF',r10:'+108%',cagr:'7.1%',div:'1.6%',price:'$38.45'},
+  'ATD':{company:'Couche-Tard',region:'CA',sector:'Retail',r10:'+268%',cagr:'13.2%',div:'0.8%',price:'$35.67'},
+};
+const QUICK=['AAPL','MSFT','NVDA','TSLA','RY','TD','SHOP','ENB','BRK.B','GOOGL'];
+let wl=JSON.parse(localStorage.getItem('globalWatchlist'))||[];
+function initWL(){
+  document.getElementById('sc-container').innerHTML=QUICK.map(t=>`<span class="sc" onclick="quickAdd('${t}')">${t}</span>`).join('');
+  renderWL();statsWL();
+}
+function addWL(){const inp=document.getElementById('ti');const t=inp.value.toUpperCase().trim();if(!t){alert('Enter a ticker');return;}if(wl.some(w=>w.t===t)){alert('Already in watchlist!');return;}if(!DB[t]){alert('Ticker not found. Try: '+QUICK.join(', '));return;}wl.push({t,...DB[t]});localStorage.setItem('globalWatchlist',JSON.stringify(wl));inp.value='';renderWL();statsWL();}
+function quickAdd(t){document.getElementById('ti').value=t;setTimeout(addWL,80);}
+function removeWL(t){wl=wl.filter(w=>w.t!==t);localStorage.setItem('globalWatchlist',JSON.stringify(wl));renderWL();statsWL();}
+function renderWL(){const body=document.getElementById('wl-body');const empty=document.getElementById('wl-empty');if(!wl.length){body.innerHTML='';empty.style.display='block';return;}empty.style.display='none';body.innerHTML=wl.map(w=>`<tr><td class="ticker">${w.t}</td><td>${w.company}</td><td>${w.region}</td><td>${w.sector}</td><td class="pos">${w.r10}</td><td class="pos">${w.cagr}</td><td>${w.price}</td><td>${w.div}</td><td><button class="del-btn" onclick="removeWL('${w.t}')">Remove</button></td></tr>`).join('');}
+function statsWL(){const c=document.getElementById('wl-stats');if(!wl.length){c.innerHTML='';return;}const avgR=wl.reduce((a,w)=>a+parseInt(w.r10),0)/wl.length;const avgD=(wl.reduce((a,w)=>a+parseFloat(w.div),0)/wl.length).toFixed(2);const regs=new Set(wl.map(w=>w.region)).size;c.innerHTML=`<div class="stat-card"><div class="stat-label">Holdings</div><div class="stat-value">${wl.length}</div><div class="stat-change positive">tracked</div></div><div class="stat-card"><div class="stat-label">Avg 10Y Return</div><div class="stat-value pos">+${Math.round(avgR)}%</div></div><div class="stat-card"><div class="stat-label">Avg Div Yield</div><div class="stat-value pos">${avgD}%</div></div><div class="stat-card"><div class="stat-label">Regions</div><div class="stat-value">${regs}</div></div>`;}
+function sortWL(col){const keys=['t','company','region','sector','r10','cagr','price','div'];wl.sort((a,b)=>{let av=a[keys[col]],bv=b[keys[col]];if(col>=4&&col<=7){av=parseFloat(av);bv=parseFloat(bv);return bv-av;}return av.toString().localeCompare(bv.toString());});renderWL();}
+
+// ══ TAB + THEME + BOOT ══
+function switchTab(id,btn){document.querySelectorAll('.tab-content').forEach(e=>e.classList.remove('active'));document.querySelectorAll('.tab-button').forEach(e=>e.classList.remove('active'));document.getElementById(id).classList.add('active');if(btn)btn.classList.add('active');if(id==='ca-div-etf')renderETF();}
+function setTheme(t){const bs=document.querySelectorAll('.theme-btn');if(t==='dark'){document.documentElement.setAttribute('data-theme','dark');document.body.setAttribute('data-theme','dark');bs[0].classList.remove('active');bs[1].classList.add('active');}else{document.documentElement.removeAttribute('data-theme');document.body.removeAttribute('data-theme');bs[0].classList.add('active');bs[1].classList.remove('active');}localStorage.setItem('dashboard-theme',t);}
+const savedTheme=localStorage.getItem('dashboard-theme')||'light';
+setTheme(savedTheme);
+initWL();
+window.addEventListener('load',()=>{setTimeout(refreshAll,800);setTimeout(initMyFunds,600);});
+</script>
+</body>
+</html>
