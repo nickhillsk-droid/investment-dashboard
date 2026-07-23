@@ -640,12 +640,12 @@ tbody tr:hover{background:var(--surface-2);}
       </select>
       <button class="sr-btn" id="sr-go-btn" onclick="runResearch()">🔍 Research</button>
     </div>
-    <div class="sr-key-row">
+    <div class="sr-key-row" id="sr-key-row">
       <span style="font-size:10px;color:var(--text-muted)">🔑 Google AI Key:</span>
       <input class="sr-key-input" id="sr-api-key" type="password" placeholder="AIza… (free — stored for this session only)"/>
       <button class="sr-key-btn" onclick="saveApiKey()">Save</button>
       <span id="sr-key-status" class="sr-key-saved" style="display:none">✅ Key saved</span>
-      <span style="font-size:9px;color:var(--text-muted);margin-left:4px">Auto-used on engilitysolutions.com via <code>GEMINI_API_KEY</code> Vercel env var · Only needed here on standalone/GitHub Pages</span>
+      <span id="sr-key-hint" style="font-size:9px;color:var(--text-muted);margin-left:4px">Checking server config…</span>
     </div>
   </div>
 
@@ -1346,6 +1346,38 @@ function renderResearchCard(d){
   </div>`;
 }
 
+async function initResearchTab(){
+  const keyRow  = document.getElementById('sr-key-row');
+  const keyHint = document.getElementById('sr-key-hint');
+  try {
+    const base = (window.parent !== window)
+      ? window.parent.location.origin
+      : window.location.origin;
+    const ping = await fetch(`${base}/api/research`, {
+      signal: AbortSignal.timeout(6000)
+    });
+    if(ping.ok){
+      // Server key is live — hide the key field entirely
+      if(keyRow)  keyRow.style.display  = 'none';
+      if(keyHint) {
+        keyHint.innerHTML = '✅ <strong>Server key active</strong> — GEMINI_API_KEY configured in Vercel · No key needed here';
+        keyHint.style.color = '#059669';
+        keyHint.style.display = 'block';
+        keyHint.style.marginTop = '6px';
+      }
+      sessionStorage.setItem('sr_proxy','1');
+      return;
+    }
+  } catch(e){ /* proxy unreachable */ }
+  // Proxy not available — show key field
+  if(keyRow)  keyRow.style.display = 'flex';
+  if(keyHint) {
+    keyHint.innerHTML = 'Get free key at <a href="https://aistudio.google.com/apikey" target="_blank" style="color:#059669">aistudio.google.com</a> → API Keys → Create';
+    keyHint.style.color = '';
+  }
+  sessionStorage.setItem('sr_proxy','0');
+}
+
 function renderSrList(){
   const hist = JSON.parse(localStorage.getItem(SR_KEY)||'[]');
   const body = document.getElementById('sr-list-body');
@@ -1390,10 +1422,11 @@ async function runResearch(){
   const rawTicker = document.getElementById('sr-ticker').value.trim().toUpperCase();
   if(!rawTicker){alert('Please enter a ticker symbol.');return;}
 
+  const proxyReady = sessionStorage.getItem('sr_proxy') === '1';
   const apiKey = sessionStorage.getItem('sr_api_key');
-  if(!apiKey){
-    alert('Please enter and save your Anthropic API key first (click the Save button next to the key field). Get a free key at console.anthropic.com');
-    document.getElementById('sr-api-key').focus();
+  if(!proxyReady && !apiKey){
+    alert('Enter your Google AI key from aistudio.google.com and click Save — or the server proxy at /api/research is not responding.');
+    document.getElementById('sr-api-key')?.focus();
     return;
   }
 
@@ -1504,7 +1537,8 @@ function statsWL(){const c=document.getElementById('wl-stats');if(!wl.length){c.
 function sortWL(col){const keys=['t','company','region','sector','r10','cagr','price','div'];wl.sort((a,b)=>{let av=a[keys[col]],bv=b[keys[col]];if(col>=4&&col<=7){av=parseFloat(av);bv=parseFloat(bv);return bv-av;}return av.toString().localeCompare(bv.toString());});renderWL();}
 
 // ══ TAB + THEME + BOOT ══
-function switchTab(id,btn){document.querySelectorAll('.tab-content').forEach(e=>e.classList.remove('active'));document.querySelectorAll('.tab-button').forEach(e=>e.classList.remove('active'));document.getElementById(id).classList.add('active');if(btn)btn.classList.add('active');if(id==='ca-div-etf')renderETF();}
+function switchTab(id,btn){document.querySelectorAll('.tab-content').forEach(e=>e.classList.remove('active'));document.querySelectorAll('.tab-button').forEach(e=>e.classList.remove('active'));document.getElementById(id).classList.add('active');if(btn)btn.classList.add('active');if(id==='ca-div-etf')renderETF();
+  if(id==='stock-research'){renderSrList();initResearchTab();}}
 function setTheme(t){const bs=document.querySelectorAll('.theme-btn');if(t==='dark'){document.documentElement.setAttribute('data-theme','dark');document.body.setAttribute('data-theme','dark');bs[0].classList.remove('active');bs[1].classList.add('active');}else{document.documentElement.removeAttribute('data-theme');document.body.removeAttribute('data-theme');bs[0].classList.add('active');bs[1].classList.remove('active');}localStorage.setItem('dashboard-theme',t);}
 const savedTheme=localStorage.getItem('dashboard-theme')||'light';
 setTheme(savedTheme);
