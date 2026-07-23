@@ -144,6 +144,99 @@ tbody tr:hover{background:var(--surface-2);}
 .streak-gold{background:rgba(250,178,25,0.25);color:#a87800;}
 .streak-silver{background:rgba(168,168,168,0.25);color:#666;}
 .streak-bronze{background:rgba(180,100,50,0.25);color:#8b4513;}
+
+/* ── Stock Research Tab ── */
+.sr-layout{display:grid;grid-template-columns:310px 1fr;gap:16px;min-height:600px;}
+@media(max-width:900px){.sr-layout{grid-template-columns:1fr;}}
+.sr-search{background:var(--surface-1);border:0.5px solid var(--border);border-radius:10px;padding:16px;margin-bottom:1.2rem;}
+.sr-search-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
+.sr-input{flex:1;min-width:130px;padding:10px 14px;background:var(--surface-0);border:0.5px solid var(--border);border-radius:6px;font-size:13px;color:var(--text-primary);font-weight:500;}
+.sr-input::placeholder{color:var(--text-muted);}
+.sr-select{padding:10px 10px;background:var(--surface-0);border:0.5px solid var(--border);border-radius:6px;font-size:12px;color:var(--text-primary);}
+.sr-btn{padding:10px 18px;background:#059669;color:white;border:none;border-radius:6px;cursor:pointer;font-weight:700;font-size:13px;white-space:nowrap;}
+.sr-btn:disabled{opacity:0.5;cursor:not-allowed;}
+.sr-btn:hover:not(:disabled){background:#047857;}
+.sr-key-row{display:flex;gap:8px;align-items:center;margin-top:8px;flex-wrap:wrap;}
+.sr-key-input{flex:1;min-width:200px;padding:8px 12px;background:var(--surface-0);border:0.5px solid var(--border);border-radius:6px;font-size:11px;color:var(--text-primary);font-family:monospace;}
+.sr-key-btn{padding:8px 12px;background:var(--surface-2);border:0.5px solid var(--border);border-radius:6px;cursor:pointer;font-size:11px;color:var(--text-secondary);}
+.sr-key-saved{font-size:10px;color:#059669;font-weight:600;}
+/* Left: history list */
+.sr-list-panel{background:var(--surface-1);border:0.5px solid var(--border);border-radius:10px;overflow:hidden;display:flex;flex-direction:column;}
+.sr-list-header{padding:12px 14px;border-bottom:0.5px solid var(--border);display:flex;justify-content:space-between;align-items:center;}
+.sr-list-title{font-size:12px;font-weight:600;color:var(--text-primary);}
+.sr-list-clear{font-size:10px;color:var(--text-muted);cursor:pointer;padding:3px 8px;border:0.5px solid var(--border);border-radius:4px;}
+.sr-list-clear:hover{color:#e34948;border-color:#e34948;}
+.sr-list-body{overflow-y:auto;flex:1;max-height:600px;}
+.sr-list-empty{padding:24px;text-align:center;font-size:12px;color:var(--text-muted);}
+.sr-list-item{padding:12px 14px;border-bottom:0.5px solid var(--border);cursor:pointer;transition:background 0.15s;}
+.sr-list-item:hover{background:var(--surface-2);}
+.sr-list-item.active{background:rgba(5,150,105,0.08);border-left:3px solid #059669;}
+.sr-li-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:3px;}
+.sr-li-ticker{font-size:13px;font-weight:700;font-family:monospace;color:var(--text-primary);}
+.sr-li-company{font-size:10px;color:var(--text-secondary);margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.sr-li-price{font-size:11px;color:var(--text-secondary);}
+/* Right: main research panel */
+.sr-main-panel{display:flex;flex-direction:column;gap:14px;}
+/* Chart */
+.sr-chart-box{background:var(--surface-1);border:0.5px solid var(--border);border-radius:10px;overflow:hidden;height:380px;}
+.sr-chart-placeholder{display:flex;align-items:center;justify-content:center;height:100%;color:var(--text-muted);font-size:13px;flex-direction:column;gap:8px;}
+/* Research card */
+.sr-card{background:var(--surface-1);border:0.5px solid var(--border);border-radius:10px;overflow:hidden;}
+.sr-card-header{padding:16px 20px;border-bottom:0.5px solid var(--border);display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:10px;}
+.sr-rec-block{display:flex;align-items:center;gap:12px;}
+.sr-rec-badge{display:inline-flex;align-items:center;gap:6px;padding:8px 18px;border-radius:8px;font-size:16px;font-weight:800;letter-spacing:1px;}
+.sr-rec-buy{background:rgba(5,150,105,0.18);color:#059669;border:1px solid rgba(5,150,105,0.4);}
+.sr-rec-hold{background:rgba(250,178,25,0.18);color:#a87800;border:1px solid rgba(250,178,25,0.4);}
+.sr-rec-short{background:rgba(227,73,72,0.18);color:#c73839;border:1px solid rgba(227,73,72,0.4);}
+.sr-company{display:flex;flex-direction:column;gap:3px;}
+.sr-company-name{font-size:17px;font-weight:600;color:var(--text-primary);}
+.sr-company-meta{font-size:11px;color:var(--text-secondary);}
+.sr-price-block{text-align:right;}
+.sr-price-now{font-size:22px;font-weight:700;color:var(--text-primary);}
+.sr-price-target{font-size:11px;color:var(--text-secondary);margin-top:2px;}
+/* Confidence bar */
+.sr-conf-row{display:flex;align-items:center;gap:10px;padding:10px 20px;background:var(--surface-2);font-size:11px;color:var(--text-secondary);}
+.sr-conf-bar{flex:1;height:7px;background:var(--surface-1);border-radius:4px;overflow:hidden;max-width:180px;}
+.sr-conf-fill{height:100%;border-radius:4px;}
+/* 52W range */
+.sr-range-row{padding:10px 20px;border-bottom:0.5px solid var(--border);}
+.sr-range-bar{display:flex;align-items:center;gap:8px;font-size:10px;}
+.sr-range-track{flex:1;height:6px;background:var(--surface-2);border-radius:4px;position:relative;overflow:visible;}
+.sr-range-fill{position:absolute;top:0;left:0;height:100%;border-radius:4px;background:linear-gradient(90deg,#e34948 0%,#fab219 50%,#0ca30c 100%);}
+.sr-range-dot{position:absolute;top:50%;transform:translate(-50%,-50%);width:12px;height:12px;background:#7c3aed;border-radius:50%;border:2px solid var(--surface-1);z-index:2;}
+/* 3-col analysis grid */
+.sr-analysis-grid{display:grid;grid-template-columns:repeat(3,1fr);border-bottom:0.5px solid var(--border);}
+@media(max-width:700px){.sr-analysis-grid{grid-template-columns:1fr;}}
+.sr-analysis-cell{padding:14px 16px;border-right:0.5px solid var(--border);}
+.sr-analysis-cell:last-child{border-right:none;}
+.sr-cell-title{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--text-secondary);margin-bottom:8px;}
+.sr-cell-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;font-size:11px;}
+.sr-cell-label{color:var(--text-muted);}
+.sr-cell-val{font-weight:600;color:var(--text-primary);}
+/* Sections */
+.sr-section{padding:14px 20px;border-bottom:0.5px solid var(--border);}
+.sr-section-title{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--text-secondary);margin-bottom:8px;}
+.sr-summary-text{font-size:12px;line-height:1.8;color:var(--text-secondary);}
+.sr-cases{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:0;}
+@media(max-width:600px){.sr-cases{grid-template-columns:1fr;}}
+.sr-case{background:var(--surface-2);border-radius:6px;padding:10px 12px;font-size:11px;line-height:1.7;color:var(--text-secondary);}
+.sr-case-title{font-weight:700;margin-bottom:4px;}
+.chip-list{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px;}
+.sr-chip{display:inline-block;padding:3px 10px;border-radius:20px;font-size:10px;font-weight:600;}
+.sr-chip-green{background:rgba(5,150,105,0.15);color:#059669;}
+.sr-chip-red{background:rgba(227,73,72,0.15);color:#c73839;}
+.sr-chip-blue{background:rgba(57,135,229,0.15);color:#3987e5;}
+.sr-consensus{font-size:12px;color:var(--text-secondary);padding:12px 20px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+.sr-loading{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:48px 20px;gap:16px;}
+.sr-loading-text{font-size:12px;color:var(--text-secondary);text-align:center;line-height:1.8;}
+.sr-rating-badge{display:inline-block;padding:2px 8px;border-radius:4px;font-size:10px;font-weight:700;}
+.sr-rating-bull{background:rgba(5,150,105,0.15);color:#059669;}
+.sr-rating-neu{background:rgba(250,178,25,0.15);color:#a87800;}
+.sr-rating-bear{background:rgba(227,73,72,0.15);color:#c73839;}
+.sr-rec-sm{display:inline-block;padding:1px 7px;border-radius:4px;font-size:9px;font-weight:800;}
+.sr-rec-sm-buy{background:rgba(5,150,105,0.2);color:#059669;}
+.sr-rec-sm-hold{background:rgba(250,178,25,0.2);color:#a87800;}
+.sr-rec-sm-short{background:rgba(227,73,72,0.2);color:#c73839;}
 </style>
 </head>
 <body>
@@ -180,6 +273,7 @@ tbody tr:hover{background:var(--surface-2);}
   <button class="tab-button" onclick="switchTab('watchlist',this)">Watchlist</button>
   <span class="div">|</span>
   <span class="rl my-rl">🗂️</span>
+  <button class="tab-button" onclick="switchTab('stock-research',this)" style="font-weight:600;color:#059669;">🔬 Stock Research</button>
   <button class="tab-button active" onclick="switchTab('my-funds',this)" style="font-weight:700;color:#7c3aed;">My Funds ★</button>
 </div>
 
@@ -526,6 +620,70 @@ tbody tr:hover{background:var(--surface-2);}
     <span><span style="display:inline-block;width:12px;height:12px;background:#fab219;border-radius:2px;vertical-align:middle"></span> Slightly below avg (&gt;80%)</span>
     <span><span style="display:inline-block;width:12px;height:12px;background:#e34948;border-radius:2px;vertical-align:middle"></span> Significantly cut (&lt;80%)</span>
     <span><span style="display:inline-block;width:12px;height:12px;background:#8b8a87;border-radius:2px;vertical-align:middle"></span> Not yet in market</span>
+  </div>
+</div>
+
+
+<!-- ═══ STOCK RESEARCH TAB ═══ -->
+<div id="stock-research" class="tab-content">
+  <!-- Search bar -->
+  <div class="sr-search">
+    <div class="sr-search-row">
+      <input class="sr-input" id="sr-ticker" placeholder="Enter ticker: AAPL · MSFT · RY · ZEB · NVDA · ENB…" onkeypress="if(event.key==='Enter')runResearch()"/>
+      <select class="sr-select" id="sr-exchange">
+        <option value="auto">Auto Exchange</option>
+        <option value="NASDAQ">NASDAQ 🇺🇸</option>
+        <option value="NYSE">NYSE 🇺🇸</option>
+        <option value="TSX">TSX 🇨🇦</option>
+        <option value="TSXV">TSXV 🇨🇦</option>
+        <option value="AMEX">AMEX 🇺🇸</option>
+      </select>
+      <button class="sr-btn" id="sr-go-btn" onclick="runResearch()">🔍 Research</button>
+    </div>
+    <div class="sr-key-row">
+      <span style="font-size:10px;color:var(--text-muted)">🔑 Anthropic API Key:</span>
+      <input class="sr-key-input" id="sr-api-key" type="password" placeholder="sk-ant-… (required — stored for this session only)"/>
+      <button class="sr-key-btn" onclick="saveApiKey()">Save</button>
+      <span id="sr-key-status" class="sr-key-saved" style="display:none">✅ Key saved</span>
+      <span style="font-size:9px;color:var(--text-muted);margin-left:4px">Get one free at <a href="https://console.anthropic.com" target="_blank" style="color:#059669">console.anthropic.com</a></span>
+    </div>
+  </div>
+
+  <div class="sr-layout">
+    <!-- LEFT: history list -->
+    <div class="sr-list-panel">
+      <div class="sr-list-header">
+        <span class="sr-list-title">📋 Research History</span>
+        <span class="sr-list-clear" onclick="clearResearchHistory()">Clear All</span>
+      </div>
+      <div class="sr-list-body" id="sr-list-body">
+        <div class="sr-list-empty">No tickers researched yet.<br>Enter a ticker above to begin.</div>
+      </div>
+    </div>
+
+    <!-- RIGHT: chart + research card -->
+    <div class="sr-main-panel">
+      <!-- TradingView Chart -->
+      <div class="sr-chart-box" id="sr-chart-box">
+        <div class="sr-chart-placeholder">
+          <div style="font-size:32px">📈</div>
+          <div>Enter a ticker above to load live chart</div>
+          <div style="font-size:10px">Powered by TradingView</div>
+        </div>
+      </div>
+      <!-- Research Result Card -->
+      <div id="sr-result">
+        <div class="sr-card" style="padding:40px;text-align:center;color:var(--text-muted)">
+          <div style="font-size:40px;margin-bottom:12px">🔬</div>
+          <div style="font-size:14px;font-weight:500;color:var(--text-primary);margin-bottom:6px">AI-Powered Investment Research</div>
+          <div style="font-size:12px;line-height:1.8;max-width:440px;margin:0 auto">
+            Enter any US or Canadian ticker, save your API key above, and receive<br>
+            a comprehensive <strong>Buy / Short / Hold</strong> recommendation backed by<br>
+            real-time fundamentals, technicals, and analyst data.
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -981,6 +1139,330 @@ document.addEventListener('DOMContentLoaded',()=>{
   // Re-check after fonts/images settle
   setTimeout(applyStickyColumns, 300);
 });
+
+
+// ══════════════════════════════════════════════════
+//  STOCK RESEARCH ENGINE
+// ══════════════════════════════════════════════════
+const SR_KEY = 'stockResearchHistory';
+
+function saveApiKey(){
+  const k=document.getElementById('sr-api-key').value.trim();
+  if(!k||!k.startsWith('sk-')){alert('Please enter a valid Anthropic API key (starts with sk-)');return;}
+  sessionStorage.setItem('sr_api_key',k);
+  document.getElementById('sr-key-status').style.display='inline';
+  setTimeout(()=>{document.getElementById('sr-key-status').style.display='none';},3000);
+}
+
+function srNormalise(raw, exch){
+  raw = raw.toUpperCase().trim().replace(/\.TO$/,'');
+  if(raw.includes(':')) return raw;
+  if(exch && exch!=='auto') return `${exch}:${raw}`;
+  const CA=['RY','TD','BNS','BMO','CM','NA','ENB','CNR','CNQ','SU','BCE','T','MFC','SLF','FFH','ATD','SHOP',
+            'ZEB','ZWC','ZWB','HDIV','HMAX','BKCC','HCAL','RNCC','GLCC','EQCC','ZPAY','EMAX','ZWU','USCC',
+            'ZEA','VCN','XIC','XEI','CDZ','VDY','XDV','ZDV','CPD','ZPR','PREF','HYLD','ZEB','FIE'];
+  return CA.includes(raw) ? `TSX:${raw}` : raw;
+}
+
+function loadChart(symbol){
+  const box = document.getElementById('sr-chart-box');
+  const theme = document.documentElement.getAttribute('data-theme')==='dark'?'dark':'light';
+  const enc = encodeURIComponent(symbol);
+  box.innerHTML = `<iframe
+    src="https://www.tradingview.com/widgetembed/?frameElementId=sr_tv_${Date.now()}&symbol=${enc}&interval=D&hidesidetoolbar=0&hidetoptoolbar=0&symboledit=0&saveimage=0&toolbarbg=f1f3f6&studies=%5B%22RSI%40tv-basicstudies%22%2C%22MACD%40tv-basicstudies%22%5D&theme=${theme}&style=1&timezone=exchange&locale=en"
+    width="100%" height="380" frameborder="0" allowtransparency="true" scrolling="no"
+    style="border-radius:10px;display:block"></iframe>`;
+}
+
+async function callResearchAPI(ticker, exchHint){
+  const apiKey = sessionStorage.getItem('sr_api_key');
+  if(!apiKey) throw new Error('NO_KEY');
+
+  const systemPrompt = `You are an elite Wall Street investment analyst — former Goldman Sachs MD with 25 years in equity research, now running a family office. You combine DCF modelling, comparable company analysis, balance sheet forensics, technical analysis (MA, RSI, MACD, chart patterns, volume-price), and macro awareness. Your recommendations are actionable, time-bound, risk-calibrated, and focused on asymmetric risk/reward. Use web search to get TODAY's current price, recent news, and latest financials.`;
+
+  const userPrompt = `Research the stock/ETF ticker "${ticker}" for a Canadian investor (can access US and CA markets via Wealthsimple, Questrade, Interactive Brokers). Exchange hint: ${exchHint||'auto-detect'}. Today: July 22, 2026.
+
+Use web search to find: current price, today's % change, 52-week range, volume, market cap, P/E (TTM & forward), EPS, dividend yield, beta, recent earnings, last 30 days news, RSI-14, MACD signal, MA50 vs MA200, key support/resistance, analyst ratings.
+
+Return ONLY valid JSON — no markdown, no preamble, no trailing text:
+{
+  "ticker":string,"companyName":string,"exchange":string,"sector":string,"currency":"USD"or"CAD",
+  "currentPrice":number,"priceChange1D":number,"volume":string,"avgVolume30D":string,
+  "marketCap":string,"peRatioTTM":string,"forwardPE":string,"eps":string,
+  "dividendYield":string,"w52High":number,"w52Low":number,"beta":string,
+  "recommendation":"BUY"or"HOLD"or"SHORT",
+  "confidence":number,"priceTarget":number,"priceTargetUpsidePct":number,"horizon":string,
+  "technicalRating":"BULLISH"or"NEUTRAL"or"BEARISH",
+  "rsi14":number,"macdSignal":string,"maTrend":string,"supportLevel":number,"resistanceLevel":number,
+  "chartPattern":string,"volumeTrend":string,
+  "fundamentalRating":"STRONG"or"MODERATE"or"WEAK",
+  "revenueGrowth":string,"earningsGrowth":string,"grossMargin":string,
+  "debtToEquity":string,"returnOnEquity":string,"competitiveMoat":string,
+  "sectorOutlook":"POSITIVE"or"NEUTRAL"or"NEGATIVE","sectorOutlookNote":string,
+  "catalysts":[string,string,string],"keyRisks":[string,string,string],
+  "recentNews":string,"bullCase":string,"bearCase":string,
+  "executiveSummary":string,"analystConsensus":string,"lastUpdated":"Jul 22, 2026"
+}`;
+
+  const resp = await fetch('https://api.anthropic.com/v1/messages',{
+    method:'POST',
+    headers:{
+      'Content-Type':'application/json',
+      'x-api-key': apiKey,
+      'anthropic-version':'2023-06-01',
+      'anthropic-dangerous-direct-browser-access':'true'
+    },
+    body: JSON.stringify({
+      model:'claude-sonnet-4-6',
+      max_tokens:2000,
+      tools:[{type:'web_search_20250305',name:'web_search'}],
+      system: systemPrompt,
+      messages:[{role:'user',content:userPrompt}]
+    })
+  });
+
+  if(!resp.ok){const e=await resp.json();throw new Error(e.error?.message||'API error '+resp.status);}
+  const data = await resp.json();
+  const texts = (data.content||[]).filter(b=>b.type==='text').map(b=>b.text).join('');
+  const clean = texts.replace(/```json|```/g,'').trim();
+  // Extract JSON object if wrapped in text
+  const match = clean.match(/\{[\s\S]*\}/);
+  if(!match) throw new Error('No JSON in response');
+  return JSON.parse(match[0]);
+}
+
+function ratingBadge(r){
+  if(!r) return '';
+  const map={BULLISH:'sr-rating-bull',NEUTRAL:'sr-rating-neu',BEARISH:'sr-rating-bear',
+             POSITIVE:'sr-rating-bull',NEGATIVE:'sr-rating-bear',MODERATE:'sr-rating-neu',
+             STRONG:'sr-rating-bull',WEAK:'sr-rating-bear'};
+  return `<span class="sr-rating-badge ${map[r]||'sr-rating-neu'}">${r}</span>`;
+}
+function recBadgeSm(r){
+  const cls = r==='BUY'?'sr-rec-sm-buy':r==='SHORT'?'sr-rec-sm-short':'sr-rec-sm-hold';
+  return `<span class="sr-rec-sm ${cls}">${r}</span>`;
+}
+function rangeBar(current, low, high){
+  if(!low||!high||low===high) return '';
+  const pct = Math.min(100, Math.max(0, ((current-low)/(high-low))*100));
+  return `<div class="sr-range-row"><div class="sr-range-bar"><span style="color:var(--text-muted);font-size:10px">${low}</span><div class="sr-range-track" style="flex:1;margin:0 8px"><div class="sr-range-fill" style="width:${pct}%"></div><div class="sr-range-dot" style="left:${pct}%"></div></div><span style="color:var(--text-muted);font-size:10px">${high}</span></div><div style="font-size:9px;color:var(--text-muted);margin-top:4px;text-align:center">52-week range · current ${pct.toFixed(0)}% from low</div></div>`;
+}
+
+function renderResearchCard(d){
+  const recCls = d.recommendation==='BUY'?'sr-rec-buy':d.recommendation==='SHORT'?'sr-rec-short':'sr-rec-hold';
+  const recIcon = d.recommendation==='BUY'?'🟢':d.recommendation==='SHORT'?'🔴':'🟡';
+  const chgCol = (d.priceChange1D||0)>=0?'#059669':'#c73839';
+  const chgSign = (d.priceChange1D||0)>=0?'+':'';
+  const upCol = (d.priceTargetUpsidePct||0)>=0?'#059669':'#c73839';
+  const confCol = d.confidence>=70?'#059669':d.confidence>=50?'#fab219':'#c73839';
+  const confPct = Math.min(100,d.confidence||50);
+  const ccy = d.currency==='CAD'?'C$':'$';
+
+  document.getElementById('sr-result').innerHTML = `
+  <div class="sr-card">
+    <!-- Header -->
+    <div class="sr-card-header">
+      <div class="sr-rec-block">
+        <span class="sr-rec-badge ${recCls}">${recIcon} ${d.recommendation}</span>
+        <div class="sr-company">
+          <div class="sr-company-name">${d.companyName||d.ticker}</div>
+          <div class="sr-company-meta">${d.exchange||''} · ${d.sector||''} · ${d.currency||'USD'} · ${d.lastUpdated||'Jul 2026'}</div>
+        </div>
+      </div>
+      <div class="sr-price-block">
+        <div class="sr-price-now">${ccy}${(d.currentPrice||0).toFixed(2)} <span style="font-size:14px;color:${chgCol}">${chgSign}${(d.priceChange1D||0).toFixed(2)}%</span></div>
+        <div class="sr-price-target">Target: <strong>${ccy}${d.priceTarget||'—'}</strong> <span style="color:${upCol}">(${chgSign}${(d.priceTargetUpsidePct||0).toFixed(1)}%)</span> · ${d.horizon||''}</div>
+      </div>
+    </div>
+
+    <!-- Confidence + key metrics bar -->
+    <div class="sr-conf-row">
+      <span>Conviction:</span>
+      <div class="sr-conf-bar"><div class="sr-conf-fill" style="width:${confPct}%;background:${confCol}"></div></div>
+      <strong style="color:${confCol}">${confPct}%</strong>
+      <span style="margin-left:12px">Mkt Cap: <strong>${d.marketCap||'—'}</strong></span>
+      <span>P/E: <strong>${d.peRatioTTM||'—'}</strong></span>
+      <span>Fwd P/E: <strong>${d.forwardPE||'—'}</strong></span>
+      <span>Div: <strong>${d.dividendYield||'0%'}</strong></span>
+      <span>Beta: <strong>${d.beta||'—'}</strong></span>
+      <span>Vol: <strong>${d.volume||'—'}</strong></span>
+    </div>
+
+    <!-- 52W range -->
+    ${rangeBar(d.currentPrice, d.w52Low, d.w52High)}
+
+    <!-- 3-col analysis grid -->
+    <div class="sr-analysis-grid">
+      <div class="sr-analysis-cell">
+        <div class="sr-cell-title">📊 Technical Analysis ${ratingBadge(d.technicalRating)}</div>
+        <div class="sr-cell-row"><span class="sr-cell-label">RSI (14)</span><span class="sr-cell-val" style="color:${(d.rsi14||50)>70?'#c73839':(d.rsi14||50)<30?'#059669':'#fab219'}">${d.rsi14||'—'} ${(d.rsi14||50)>70?'(Overbought)':(d.rsi14||50)<30?'(Oversold)':'(Neutral)'}</span></div>
+        <div class="sr-cell-row"><span class="sr-cell-label">MACD</span><span class="sr-cell-val">${d.macdSignal||'—'}</span></div>
+        <div class="sr-cell-row"><span class="sr-cell-label">MA Trend</span><span class="sr-cell-val" style="font-size:10px">${d.maTrend||'—'}</span></div>
+        <div class="sr-cell-row"><span class="sr-cell-label">Support</span><span class="sr-cell-val">${ccy}${d.supportLevel||'—'}</span></div>
+        <div class="sr-cell-row"><span class="sr-cell-label">Resistance</span><span class="sr-cell-val">${ccy}${d.resistanceLevel||'—'}</span></div>
+        <div class="sr-cell-row"><span class="sr-cell-label">Pattern</span><span class="sr-cell-val" style="font-size:10px">${d.chartPattern||'—'}</span></div>
+        <div class="sr-cell-row"><span class="sr-cell-label">Volume</span><span class="sr-cell-val" style="font-size:10px">${d.volumeTrend||'—'}</span></div>
+      </div>
+      <div class="sr-analysis-cell">
+        <div class="sr-cell-title">📋 Fundamental Analysis ${ratingBadge(d.fundamentalRating)}</div>
+        <div class="sr-cell-row"><span class="sr-cell-label">Revenue Growth</span><span class="sr-cell-val">${d.revenueGrowth||'—'}</span></div>
+        <div class="sr-cell-row"><span class="sr-cell-label">Earnings Growth</span><span class="sr-cell-val">${d.earningsGrowth||'—'}</span></div>
+        <div class="sr-cell-row"><span class="sr-cell-label">Gross Margin</span><span class="sr-cell-val">${d.grossMargin||'—'}</span></div>
+        <div class="sr-cell-row"><span class="sr-cell-label">Return on Equity</span><span class="sr-cell-val">${d.returnOnEquity||'—'}</span></div>
+        <div class="sr-cell-row"><span class="sr-cell-label">Debt/Equity</span><span class="sr-cell-val">${d.debtToEquity||'—'}</span></div>
+        <div class="sr-cell-row"><span class="sr-cell-label">EPS (TTM)</span><span class="sr-cell-val">${d.eps||'—'}</span></div>
+        <div style="margin-top:6px;font-size:10px;color:var(--text-secondary)"><strong>Moat:</strong> ${d.competitiveMoat||'—'}</div>
+      </div>
+      <div class="sr-analysis-cell">
+        <div class="sr-cell-title">🌐 Sector & Risk ${ratingBadge(d.sectorOutlook)}</div>
+        <div style="font-size:10px;color:var(--text-secondary);margin-bottom:8px;line-height:1.6">${d.sectorOutlookNote||'—'}</div>
+        <div style="font-size:10px;font-weight:600;color:var(--text-secondary);margin-bottom:4px">⚠️ Key Risks</div>
+        ${(d.keyRisks||[]).map(r=>`<div style="font-size:10px;color:var(--text-muted);padding:2px 0;display:flex;gap:5px"><span style="color:#c73839">▸</span>${r}</div>`).join('')}
+        <div style="font-size:10px;font-weight:600;color:var(--text-secondary);margin-top:8px;margin-bottom:4px">📰 Recent News</div>
+        <div style="font-size:10px;color:var(--text-muted);line-height:1.5">${d.recentNews||'—'}</div>
+      </div>
+    </div>
+
+    <!-- Executive Summary -->
+    <div class="sr-section">
+      <div class="sr-section-title">🧠 Executive Summary — Analyst View</div>
+      <div class="sr-summary-text">${d.executiveSummary||'—'}</div>
+    </div>
+
+    <!-- Bull / Bear -->
+    <div class="sr-section">
+      <div class="sr-section-title">Bull vs Bear</div>
+      <div class="sr-cases">
+        <div class="sr-case"><div class="sr-case-title" style="color:#059669">🐂 Bull Case</div>${d.bullCase||'—'}</div>
+        <div class="sr-case"><div class="sr-case-title" style="color:#c73839">🐻 Bear Case</div>${d.bearCase||'—'}</div>
+      </div>
+    </div>
+
+    <!-- Catalysts -->
+    <div class="sr-section" style="border-bottom:none">
+      <div class="sr-section-title">🚀 Near-Term Catalysts</div>
+      <div class="chip-list">${(d.catalysts||[]).map(cat=>`<span class="sr-chip sr-chip-green">${cat}</span>`).join('')}</div>
+    </div>
+
+    <!-- Consensus -->
+    <div class="sr-consensus">
+      <span style="font-weight:600;color:var(--text-primary)">👥 Analyst Consensus:</span>
+      <span>${d.analystConsensus||'—'}</span>
+    </div>
+  </div>`;
+}
+
+function renderSrList(){
+  const hist = JSON.parse(localStorage.getItem(SR_KEY)||'[]');
+  const body = document.getElementById('sr-list-body');
+  if(!body) return;
+  if(!hist.length){body.innerHTML='<div class="sr-list-empty">No tickers researched yet.<br>Enter a ticker above to begin.</div>';return;}
+  body.innerHTML = hist.slice().reverse().map(h=>{
+    const recCls = h.recommendation==='BUY'?'sr-rec-sm-buy':h.recommendation==='SHORT'?'sr-rec-sm-short':'sr-rec-sm-hold';
+    const chgCol = (h.priceChange1D||0)>=0?'#059669':'#c73839';
+    const ccy = h.currency==='CAD'?'C$':'$';
+    return `<div class="sr-list-item" id="srli-${h.ticker}" onclick="loadFromHistory('${h.ticker}')">
+      <div class="sr-li-top">
+        <span class="sr-li-ticker">${h.ticker}</span>
+        <span class="sr-rec-sm ${recCls}">${h.recommendation}</span>
+      </div>
+      <div class="sr-li-company">${h.companyName||''}</div>
+      <div class="sr-li-price">${ccy}${(h.currentPrice||0).toFixed(2)} <span style="color:${chgCol};font-size:10px">${(h.priceChange1D||0)>=0?'+':''}${(h.priceChange1D||0).toFixed(2)}%</span> · Target ${ccy}${h.priceTarget||'—'}</div>
+      <div style="font-size:9px;color:var(--text-muted);margin-top:2px">${h.confidence||'?'}% confidence · ${h.lastUpdated||''}</div>
+    </div>`;
+  }).join('');
+}
+
+function loadFromHistory(ticker){
+  const hist = JSON.parse(localStorage.getItem(SR_KEY)||'[]');
+  const entry = hist.find(h=>h.ticker===ticker);
+  if(!entry) return;
+  document.querySelectorAll('.sr-list-item').forEach(el=>el.classList.remove('active'));
+  const el = document.getElementById('srli-'+ticker);
+  if(el) el.classList.add('active');
+  const exch = entry.exchange||'auto';
+  loadChart(srNormalise(ticker, exch));
+  renderResearchCard(entry);
+}
+
+function clearResearchHistory(){
+  if(!confirm('Clear all research history?')) return;
+  localStorage.removeItem(SR_KEY);
+  renderSrList();
+  document.getElementById('sr-result').innerHTML='<div class="sr-card" style="padding:40px;text-align:center;color:var(--text-muted)"><div style="font-size:32px;margin-bottom:8px">🔬</div><div style="font-size:13px">History cleared — enter a ticker to start fresh.</div></div>';
+}
+
+async function runResearch(){
+  const rawTicker = document.getElementById('sr-ticker').value.trim().toUpperCase();
+  if(!rawTicker){alert('Please enter a ticker symbol.');return;}
+
+  const apiKey = sessionStorage.getItem('sr_api_key');
+  if(!apiKey){
+    alert('Please enter and save your Anthropic API key first (click the Save button next to the key field). Get a free key at console.anthropic.com');
+    document.getElementById('sr-api-key').focus();
+    return;
+  }
+
+  const exchHint = document.getElementById('sr-exchange').value;
+  const tvSymbol = srNormalise(rawTicker, exchHint==='auto'?null:exchHint);
+  const btn = document.getElementById('sr-go-btn');
+  btn.disabled = true; btn.textContent = '⏳ Researching…';
+
+  // Load chart immediately
+  loadChart(tvSymbol);
+
+  // Show loading state
+  document.getElementById('sr-result').innerHTML = `
+    <div class="sr-card"><div class="sr-loading">
+      <div style="font-size:36px" class="sp">⏳</div>
+      <div class="sr-loading-text">
+        <strong>Researching ${rawTicker}</strong><br>
+        Searching live markets · Pulling fundamentals &amp; technicals<br>
+        Running buy/short/hold analysis via Claude Sonnet…
+      </div>
+    </div></div>`;
+
+  try {
+    const data = await callResearchAPI(rawTicker, exchHint==='auto'?null:exchHint);
+    data.ticker = data.ticker || rawTicker;
+
+    // Save to history
+    const hist = JSON.parse(localStorage.getItem(SR_KEY)||'[]');
+    const idx = hist.findIndex(h=>h.ticker===data.ticker);
+    if(idx>-1) hist.splice(idx,1);
+    hist.push(data);
+    if(hist.length>50) hist.shift(); // keep last 50
+    localStorage.setItem(SR_KEY, JSON.stringify(hist));
+
+    renderResearchCard(data);
+    renderSrList();
+
+    // Mark active
+    document.querySelectorAll('.sr-list-item').forEach(el=>el.classList.remove('active'));
+    const li = document.getElementById('srli-'+data.ticker);
+    if(li) li.classList.add('active');
+
+  } catch(err) {
+    let msg = err.message==='NO_KEY'
+      ? 'No API key found. Please enter your Anthropic API key and click Save.'
+      : `Research failed: ${err.message}`;
+    document.getElementById('sr-result').innerHTML = `
+      <div class="sr-card" style="padding:32px;text-align:center">
+        <div style="font-size:28px;margin-bottom:8px">⚠️</div>
+        <div style="font-size:13px;color:#c73839;font-weight:600;margin-bottom:6px">Research Error</div>
+        <div style="font-size:11px;color:var(--text-secondary)">${msg}</div>
+      </div>`;
+  }
+
+  btn.disabled=false; btn.textContent='🔍 Research';
+}
+
+// Init on tab switch
+const _origSwitchTab = switchTab;
+function switchTab(id, btn){
+  _origSwitchTab(id, btn);
+  if(id==='stock-research') renderSrList();
+}
 
 // ══ WATCHLIST ENGINE ══
 const DB={
