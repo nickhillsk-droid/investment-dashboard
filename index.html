@@ -641,11 +641,11 @@ tbody tr:hover{background:var(--surface-2);}
       <button class="sr-btn" id="sr-go-btn" onclick="runResearch()">🔍 Research</button>
     </div>
     <div class="sr-key-row">
-      <span style="font-size:10px;color:var(--text-muted)">🔑 Anthropic API Key:</span>
-      <input class="sr-key-input" id="sr-api-key" type="password" placeholder="sk-ant-… (required — stored for this session only)"/>
+      <span style="font-size:10px;color:var(--text-muted)">🔑 Google AI Key:</span>
+      <input class="sr-key-input" id="sr-api-key" type="password" placeholder="AIza… (free — stored for this session only)"/>
       <button class="sr-key-btn" onclick="saveApiKey()">Save</button>
       <span id="sr-key-status" class="sr-key-saved" style="display:none">✅ Key saved</span>
-      <span style="font-size:9px;color:var(--text-muted);margin-left:4px">Get one free at <a href="https://console.anthropic.com" target="_blank" style="color:#059669">console.anthropic.com</a></span>
+      <span style="font-size:9px;color:var(--text-muted);margin-left:4px">Get free at <a href="https://aistudio.google.com/apikey" target="_blank" style="color:#059669">aistudio.google.com</a> → Get API Key → Create</span>
     </div>
   </div>
 
@@ -1148,7 +1148,7 @@ const SR_KEY = 'stockResearchHistory';
 
 function saveApiKey(){
   const k=document.getElementById('sr-api-key').value.trim();
-  if(!k||!k.startsWith('sk-')){alert('Please enter a valid Anthropic API key (starts with sk-)');return;}
+  if(!k||k.length<20){alert('Please enter a valid Google AI key from aistudio.google.com');return;}
   sessionStorage.setItem('sr_api_key',k);
   document.getElementById('sr-key-status').style.display='inline';
   setTimeout(()=>{document.getElementById('sr-key-status').style.display='none';},3000);
@@ -1178,13 +1178,13 @@ async function callResearchAPI(ticker, exchHint){
   const apiKey = sessionStorage.getItem('sr_api_key');
   if(!apiKey) throw new Error('NO_KEY');
 
-  const systemPrompt = `You are an elite Wall Street investment analyst — former Goldman Sachs MD with 25 years in equity research, now running a family office. You combine DCF modelling, comparable company analysis, balance sheet forensics, technical analysis (MA, RSI, MACD, chart patterns, volume-price), and macro awareness. Your recommendations are actionable, time-bound, risk-calibrated, and focused on asymmetric risk/reward. Use web search to get TODAY's current price, recent news, and latest financials.`;
+  const systemPrompt = `You are an elite Wall Street investment analyst — former Goldman Sachs MD with 25 years in equity research, now running a family office. You combine DCF modelling, comparable company analysis, balance sheet forensics, technical analysis (MA, RSI, MACD, chart patterns, volume-price), and macro awareness. Your recommendations are actionable, time-bound, risk-calibrated, and focused on asymmetric risk/reward. Use Google Search to find TODAY's live price, recent news, and latest financials before forming your view.`;
 
-  const userPrompt = `Research the stock/ETF ticker "${ticker}" for a Canadian investor (can access US and CA markets via Wealthsimple, Questrade, Interactive Brokers). Exchange hint: ${exchHint||'auto-detect'}. Today: July 22, 2026.
+  const userPrompt = `Search for current market data on "${ticker}" (exchange hint: ${exchHint||'auto-detect'}, today: July 23, 2026). This is for a Canadian investor with access to US and CA markets (Wealthsimple, Questrade, Interactive Brokers).
 
-Use web search to find: current price, today's % change, 52-week range, volume, market cap, P/E (TTM & forward), EPS, dividend yield, beta, recent earnings, last 30 days news, RSI-14, MACD signal, MA50 vs MA200, key support/resistance, analyst ratings.
+Find via search: current price, today % change, 52-week high/low, volume, market cap, P/E TTM & forward, EPS, dividend yield, beta, latest earnings result, significant news last 30 days, RSI-14, MACD signal, MA50 vs MA200, key support/resistance levels, analyst ratings & consensus.
 
-Return ONLY valid JSON — no markdown, no preamble, no trailing text:
+Return ONLY valid JSON — no markdown fences, no preamble, no trailing text:
 {
   "ticker":string,"companyName":string,"exchange":string,"sector":string,"currency":"USD"or"CAD",
   "currentPrice":number,"priceChange1D":number,"volume":string,"avgVolume30D":string,
@@ -1201,33 +1201,35 @@ Return ONLY valid JSON — no markdown, no preamble, no trailing text:
   "sectorOutlook":"POSITIVE"or"NEUTRAL"or"NEGATIVE","sectorOutlookNote":string,
   "catalysts":[string,string,string],"keyRisks":[string,string,string],
   "recentNews":string,"bullCase":string,"bearCase":string,
-  "executiveSummary":string,"analystConsensus":string,"lastUpdated":"Jul 22, 2026"
+  "executiveSummary":string,"analystConsensus":string,"lastUpdated":"Jul 23, 2026"
 }`;
 
-  const resp = await fetch('https://api.anthropic.com/v1/messages',{
-    method:'POST',
-    headers:{
-      'Content-Type':'application/json',
-      'x-api-key': apiKey,
-      'anthropic-version':'2023-06-01',
-      'anthropic-dangerous-direct-browser-access':'true'
-    },
-    body: JSON.stringify({
-      model:'claude-sonnet-4-6',
-      max_tokens:2000,
-      tools:[{type:'web_search_20250305',name:'web_search'}],
-      system: systemPrompt,
-      messages:[{role:'user',content:userPrompt}]
-    })
-  });
+  // ── Gemini 2.0 Flash with Google Search grounding (free tier) ──
+  const resp = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
+    {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        systemInstruction:{parts:[{text:systemPrompt}]},
+        contents:[{role:'user',parts:[{text:userPrompt}]}],
+        tools:[{google_search:{}}],
+        generationConfig:{temperature:0.3,maxOutputTokens:2048,responseMimeType:'text/plain'}
+      })
+    }
+  );
 
-  if(!resp.ok){const e=await resp.json();throw new Error(e.error?.message||'API error '+resp.status);}
-  const data = await resp.json();
-  const texts = (data.content||[]).filter(b=>b.type==='text').map(b=>b.text).join('');
-  const clean = texts.replace(/```json|```/g,'').trim();
-  // Extract JSON object if wrapped in text
-  const match = clean.match(/\{[\s\S]*\}/);
-  if(!match) throw new Error('No JSON in response');
+  if(!resp.ok){
+    const e=await resp.json();
+    throw new Error(e.error?.message||'Gemini API error '+resp.status);
+  }
+
+  const data=await resp.json();
+  const parts=(data.candidates?.[0]?.content?.parts||[]);
+  const text=parts.filter(p=>p.text).map(p=>p.text).join('');
+  const clean=text.replace(/```json|```/g,'').trim();
+  const match=clean.match(/\{[\s\S]*\}/);
+  if(!match) throw new Error('No JSON found in Gemini response — try again');
   return JSON.parse(match[0]);
 }
 
@@ -1444,7 +1446,7 @@ async function runResearch(){
 
   } catch(err) {
     let msg = err.message==='NO_KEY'
-      ? 'No API key found. Please enter your Anthropic API key and click Save.'
+      ? 'No Google AI key found. Please enter your key from aistudio.google.com and click Save.'
       : `Research failed: ${err.message}`;
     document.getElementById('sr-result').innerHTML = `
       <div class="sr-card" style="padding:32px;text-align:center">
