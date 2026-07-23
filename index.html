@@ -457,10 +457,10 @@ tbody tr:hover{background:var(--surface-2);}
 <!-- ═══ CA DIVIDEND ETFs & MUTUAL FUNDS ═══ -->
 <div id="ca-div-etf" class="tab-content">
   <div class="stats-grid">
-    <div class="stat-card"><div class="stat-label">Funds Tracked</div><div class="stat-value" style="color:#e34948">28</div><div class="stat-change positive">ETFs, Stocks &amp; BDCs</div></div>
+    <div class="stat-card"><div class="stat-label">Funds Tracked</div><div class="stat-value" style="color:#e34948">29</div><div class="stat-change positive">ETFs, Stocks &amp; BDCs</div></div>
     <div class="stat-card"><div class="stat-label">Highest Yield</div><div class="stat-value" style="color:#e34948">BTCI 26.3%</div><div class="stat-change" style="color:#fab219">⚠️ Bitcoin income</div></div>
     <div class="stat-card"><div class="stat-label">Most Consistent</div><div class="stat-value" style="color:#3987e5">MO / O / VYM</div><div class="stat-change positive">100% — 19–55 yrs!</div></div>
-    <div class="stat-card"><div class="stat-label">Avg Current Yield</div><div class="stat-value" style="color:#fab219">9.2%</div><div class="stat-change">Across all 28 funds</div></div>
+    <div class="stat-card"><div class="stat-label">Avg Current Yield</div><div class="stat-value" style="color:#fab219">9.2%</div><div class="stat-change">Across all 29 funds</div></div>
     <div class="stat-card"><div class="stat-label">Avg Consistency</div><div class="stat-value pos">97.8%</div><div class="stat-change positive">5-yr avg</div></div>
   </div>
 
@@ -478,7 +478,7 @@ tbody tr:hover{background:var(--surface-2);}
   <!-- Filter bar -->
   <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:1rem;align-items:center">
     <span style="font-size:11px;color:var(--text-secondary);font-weight:600">Filter:</span>
-    <button class="etf-filter-btn active" onclick="filterETF('all',this)">All 28</button>
+    <button class="etf-filter-btn active" onclick="filterETF('all',this)">All 29</button>
     <button class="etf-filter-btn" onclick="filterETF('ca-cc',this)">🇨🇦 CA Covered Call</button>
     <button class="etf-filter-btn" onclick="filterETF('us-cc',this)">🇺🇸 US Income ETFs</button>
     <button class="etf-filter-btn" onclick="filterETF('stocks',this)">📈 Stocks &amp; BDCs</button>
@@ -497,6 +497,7 @@ tbody tr:hover{background:var(--surface-2);}
       <thead>
         <tr>
           <th onclick="sortETF('rank')" style="min-width:36px">#</th>
+          <th style="min-width:90px;cursor:default">💰 Price / NAV<div style="font-size:8px;font-weight:400;color:var(--text-muted)">Est. Jul 2026</div></th>
           <th onclick="sortETF('ticker')" style="min-width:100px">Ticker / $</th>
           <th onclick="sortETF('name')" style="min-width:180px">Fund / Stock Name</th>
           <th onclick="sortETF('region')" style="min-width:110px">Region / Type</th>
@@ -703,9 +704,34 @@ const CA_DIV_ETF = [
   {rank:26,ticker:'OMAH',   region:'US', name:'VistaShares Target 15 Berkshire Select Income ETF',  type:'ETF',   cat:'us-cc',    exchange:'NYSE',   currency:'USD', provider:'VistaShares',  strategy:'Berkshire Hathaway\'s top 20 holdings (BRK positions) + covered call income overlay',freq:'Monthly', mer:0.95,aum:0.9,  incYr:2025,yield:14.8, y:{2025:15.2},                                           consistency:100,streak:1, trend:'stable',   nextEx:'Jul 28, 2026',nextPay:'Jul 31, 2026', divScore:48,brokers:['QT','IBKR']},
   {rank:27,ticker:'QQQI',   region:'US', name:'NEOS NASDAQ-100 High Income ETF',                    type:'ETF',   cat:'us-cc',    exchange:'NASDAQ', currency:'USD', provider:'NEOS',         strategy:'NASDAQ-100 stocks + Section 1256 tax-efficient options — NEOS companion to SPYI', freq:'Monthly', mer:0.68,aum:3.8,  incYr:2024,yield:14.1, y:{2024:14.5,2025:14.1},                                 consistency:100,streak:2, trend:'stable',   nextEx:'Aug 1, 2026', nextPay:'Aug 5, 2026',  divScore:70,brokers:['QT','IBKR']},
   {rank:28,ticker:'BTCI',   region:'US', name:'NEOS Bitcoin High Income ETF',                       type:'ETF',   cat:'crypto',   exchange:'BATS',   currency:'USD', provider:'NEOS',         strategy:'⚠️ HIGH RISK: Bitcoin ETF positions + covered calls — extreme NAV volatility tied to BTC price', freq:'Monthly', mer:0.68,aum:0.4, incYr:2024,yield:26.3, y:{2024:35.0,2025:27.8},                     consistency:98, streak:2, trend:'declining',nextEx:'Jul 22, 2026',nextPay:'Jul 24, 2026', divScore:98,brokers:['QT','IBKR']},
+  // ── User-requested: USCC (was in My Funds portfolio — TSX-listed S&P 500 CC) ──
+  {rank:29,ticker:'USCC',   region:'CA', name:'Global X S\u0026P 500 Covered Call ETF',                         type:'ETF',   cat:'ca-cc',    exchange:'TSX',    currency:'CAD', provider:'Global X Canada', strategy:'S\u0026P 500 US large-cap equity + dynamic covered call options + 25% leverage (fmr Horizons)', freq:'Monthly', mer:0.65,aum:0.55, incYr:2020,yield:9.7,  y:{2020:9.5,2021:8.8,2022:10.5,2023:9.8,2024:9.7,2025:9.7},         consistency:99, streak:5, trend:'stable', nextEx:'Jul 29, 2026',nextPay:'Aug 13, 2026', divScore:45,brokers:['WS','QT','IBKR']},
 ];
 
 const ETF_YEARS = [2019,2020,2021,2022,2023,2024,2025];
+
+// Current estimated market price / NAV (Jul 2026 — approximate, for reference only)
+const NAV_CURRENT = {
+  'HDIV':{p:17.20,c:'C$'},'HMAX':{p:15.80,c:'C$'},'HCAL':{p:21.80,c:'C$'},
+  'BKCC':{p:24.20,c:'C$'},'RNCC':{p:12.90,c:'C$'},'GLCC':{p:15.00,c:'C$'},
+  'EQCC':{p:18.00,c:'C$'},'ZPAY':{p:23.10,c:'C$'},'EMAX':{p:16.80,c:'C$'},
+  'ZWU' :{p:20.40,c:'C$'},'USCC':{p:20.50,c:'C$'},
+  'JEPI':{p:60.10,c:'$'}, 'JEPQ':{p:62.30,c:'$'}, 'QYLD':{p:18.20,c:'$'},
+  'XYLD':{p:44.80,c:'$'}, 'RYLD':{p:16.20,c:'$'}, 'SPYI':{p:52.40,c:'$'},
+  'ARCC':{p:22.20,c:'$'}, 'MAIN':{p:55.60,c:'$'}, 'MO'  :{p:72.40,c:'$'},
+  'BTI' :{p:57.80,c:'$'}, 'ENB' :{p:48.40,c:'$'}, 'O'   :{p:56.40,c:'$'},
+  'SCHD':{p:30.60,c:'$'}, 'VYM' :{p:150.40,c:'$'},'IDV' :{p:30.20,c:'$'},
+  'OMAH':{p:19.00,c:'$'}, 'QQQI':{p:51.40,c:'$'}, 'BTCI':{p:29.70,c:'$'},
+};
+function navPrice(ticker) {
+  const d = NAV_CURRENT[ticker];
+  if (!d) return '<span style="font-size:10px;color:var(--text-muted)">—</span>';
+  const isCad = d.c === 'C$';
+  return `<div style="text-align:center;line-height:1.5">
+    <span style="font-size:15px;font-weight:700;color:#7c3aed">${d.c}${d.p.toFixed(2)}</span>
+    <div style="font-size:8px;color:var(--text-muted)">${isCad?'CAD':'USD'} · Est. Jul 2026</div>
+  </div>`;
+}
 
 function hmCell(val, avg, yr) {
   if (val === null || val === undefined) return `<div class="hm-cell hm-na" title="${yr}: Not in market"><span class="hm-yr">'${String(yr).slice(2)}</span>–</div>`;
@@ -770,6 +796,7 @@ const NAV_DATA = {
   'SCHD':  {2019:19.4, 2020:22.8, 2021:29.4, 2022:26.2, 2023:27.4, 2024:27.2, 2025:30.6},
   'VYM':   {2019:89.8, 2020:88.4, 2021:109.2,2022:108.6,2023:117.4,2024:128.2,2025:150.4},
   'IDV':   {2019:32.2, 2020:24.4, 2021:28.6, 2022:26.4, 2023:27.2, 2024:28.4, 2025:30.2},
+  'USCC':  {2020:19.5, 2021:22.0, 2022:19.0, 2023:21.5, 2024:20.8, 2025:20.5},  // TSX S&P500 CC (fmr Horizons)
   // ── New additions ──
   'OMAH':  {2025:19.5},                          // Launched Mar 2025; Berkshire positions + CC
   'QQQI':  {2024:47.8, 2025:51.4},               // NEOS NASDAQ-100 High Income, launched Jan 2024
@@ -846,8 +873,8 @@ function regionBadge(r) {
 }
 
 // ── Freeze panes: measure actual rendered widths, then pin cols 1–9 ──
-// Col 9 = Yield 2025 = the split point (matches Excel "freeze at this column")
-const FREEZE_COLS = 9;
+// Col 10 = Yield 2025 = the split point (new col 2 = Price/NAV shifts everything +1)
+const FREEZE_COLS = 10;
 function applyStickyColumns() {
   const table = document.getElementById('ca-etf-table');
   if (!table) return;
@@ -903,6 +930,7 @@ function renderETF() {
       : `<span style="font-size:9px;padding:1px 5px;background:rgba(227,73,72,0.15);color:#e34948;border-radius:3px">CAD</span>`;
     return `<tr data-cat="${f.cat}" data-region="${f.region}" data-freq="${f.freq}" data-yield="${f.yield}">
       <td style="font-size:11px;color:var(--text-muted);text-align:center">${f.rank}</td>
+      <td style="padding:6px 8px">${navPrice(f.ticker)}</td>
       <td class="ticker">${f.ticker} ${currBadge}</td>
       <td style="font-size:11px;max-width:180px">${f.name}</td>
       <td>${regionBadge(f.region)} ${typeBadge}</td>
