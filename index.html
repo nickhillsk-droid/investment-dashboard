@@ -457,10 +457,10 @@ tbody tr:hover{background:var(--surface-2);}
 <!-- ═══ CA DIVIDEND ETFs & MUTUAL FUNDS ═══ -->
 <div id="ca-div-etf" class="tab-content">
   <div class="stats-grid">
-    <div class="stat-card"><div class="stat-label">Funds Tracked</div><div class="stat-value" style="color:#e34948">25</div><div class="stat-change positive">ETFs &amp; Mutual Funds</div></div>
-    <div class="stat-card"><div class="stat-label">Highest Yield</div><div class="stat-value" style="color:#0ca30c">HMAX 13.1%</div><div class="stat-change positive">CA covered call</div></div>
+    <div class="stat-card"><div class="stat-label">Funds Tracked</div><div class="stat-value" style="color:#e34948">28</div><div class="stat-change positive">ETFs, Stocks &amp; BDCs</div></div>
+    <div class="stat-card"><div class="stat-label">Highest Yield</div><div class="stat-value" style="color:#e34948">BTCI 26.3%</div><div class="stat-change" style="color:#fab219">⚠️ Bitcoin income</div></div>
     <div class="stat-card"><div class="stat-label">Most Consistent</div><div class="stat-value" style="color:#3987e5">MO / O / VYM</div><div class="stat-change positive">100% — 19–55 yrs!</div></div>
-    <div class="stat-card"><div class="stat-label">Avg Current Yield</div><div class="stat-value" style="color:#fab219">8.1%</div><div class="stat-change">Across all 25 funds</div></div>
+    <div class="stat-card"><div class="stat-label">Avg Current Yield</div><div class="stat-value" style="color:#fab219">9.2%</div><div class="stat-change">Across all 28 funds</div></div>
     <div class="stat-card"><div class="stat-label">Avg Consistency</div><div class="stat-value pos">97.8%</div><div class="stat-change positive">5-yr avg</div></div>
   </div>
 
@@ -478,7 +478,7 @@ tbody tr:hover{background:var(--surface-2);}
   <!-- Filter bar -->
   <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:1rem;align-items:center">
     <span style="font-size:11px;color:var(--text-secondary);font-weight:600">Filter:</span>
-    <button class="etf-filter-btn active" onclick="filterETF('all',this)">All 25</button>
+    <button class="etf-filter-btn active" onclick="filterETF('all',this)">All 28</button>
     <button class="etf-filter-btn" onclick="filterETF('ca-cc',this)">🇨🇦 CA Covered Call</button>
     <button class="etf-filter-btn" onclick="filterETF('us-cc',this)">🇺🇸 US Income ETFs</button>
     <button class="etf-filter-btn" onclick="filterETF('stocks',this)">📈 Stocks &amp; BDCs</button>
@@ -487,6 +487,7 @@ tbody tr:hover{background:var(--surface-2);}
     <button class="etf-filter-btn" onclick="filterETF('quarterly',this)">Quarterly Only</button>
     <button class="etf-filter-btn" onclick="filterETF('high',this)">🔥 Yield ≥9%</button>
     <button class="etf-filter-btn" onclick="filterETF('unique',this)">🌈 Most Diverse</button>
+    <button class="etf-filter-btn" onclick="filterETF('crypto',this)">₿ Bitcoin Income</button>
     <span style="margin-left:auto;font-size:11px;color:var(--text-muted)" id="etf-count">Showing 25 funds</span>
   </div>
 
@@ -698,6 +699,10 @@ const CA_DIV_ETF = [
   {rank:24,ticker:'VYM',    region:'US', name:'Vanguard High Dividend Yield ETF',                    type:'ETF',   cat:'div-growth',exchange:'NYSE',  currency:'USD', provider:'Vanguard',     strategy:'FTSE High Dividend Yield Index — broad US high div',      freq:'Quarterly', mer:0.06,aum:65.0, incYr:2006,yield:2.3, y:{2019:3.2,2020:3.1,2021:2.8,2022:3.0,2023:3.1,2024:2.8,2025:2.3},  consistency:100,streak:19,trend:'stable', nextEx:'Sep 18, 2026',nextPay:'Sep 23, 2026', divScore:55,brokers:['WS','QT','IBKR']},
   // ── International / Asia-Pacific ──
   {rank:25,ticker:'IDV',    region:'GL', name:'iShares International Select Dividend ETF',           type:'ETF',   cat:'intl',     exchange:'NASDAQ', currency:'USD', provider:'BlackRock',    strategy:'Ex-US: Europe/Asia/Australia — highest-yielding intl div', freq:'Quarterly', mer:0.49,aum:4.2,  incYr:2007,yield:5.5, y:{2019:4.8,2020:3.4,2021:4.1,2022:5.8,2023:5.6,2024:5.4,2025:5.5},  consistency:98, streak:18,trend:'stable', nextEx:'Sep 20, 2026',nextPay:'Sep 27, 2026', divScore:92,brokers:['WS','QT','IBKR']},
+  // ── Newly added: user-requested tickers ──
+  {rank:26,ticker:'OMAH',   region:'US', name:'VistaShares Target 15 Berkshire Select Income ETF',  type:'ETF',   cat:'us-cc',    exchange:'NYSE',   currency:'USD', provider:'VistaShares',  strategy:'Berkshire Hathaway\'s top 20 holdings (BRK positions) + covered call income overlay',freq:'Monthly', mer:0.95,aum:0.9,  incYr:2025,yield:14.8, y:{2025:15.2},                                           consistency:100,streak:1, trend:'stable',   nextEx:'Jul 28, 2026',nextPay:'Jul 31, 2026', divScore:48,brokers:['QT','IBKR']},
+  {rank:27,ticker:'QQQI',   region:'US', name:'NEOS NASDAQ-100 High Income ETF',                    type:'ETF',   cat:'us-cc',    exchange:'NASDAQ', currency:'USD', provider:'NEOS',         strategy:'NASDAQ-100 stocks + Section 1256 tax-efficient options — NEOS companion to SPYI', freq:'Monthly', mer:0.68,aum:3.8,  incYr:2024,yield:14.1, y:{2024:14.5,2025:14.1},                                 consistency:100,streak:2, trend:'stable',   nextEx:'Aug 1, 2026', nextPay:'Aug 5, 2026',  divScore:70,brokers:['QT','IBKR']},
+  {rank:28,ticker:'BTCI',   region:'US', name:'NEOS Bitcoin High Income ETF',                       type:'ETF',   cat:'crypto',   exchange:'BATS',   currency:'USD', provider:'NEOS',         strategy:'⚠️ HIGH RISK: Bitcoin ETF positions + covered calls — extreme NAV volatility tied to BTC price', freq:'Monthly', mer:0.68,aum:0.4, incYr:2024,yield:26.3, y:{2024:35.0,2025:27.8},                     consistency:98, streak:2, trend:'declining',nextEx:'Jul 22, 2026',nextPay:'Jul 24, 2026', divScore:98,brokers:['QT','IBKR']},
 ];
 
 const ETF_YEARS = [2019,2020,2021,2022,2023,2024,2025];
@@ -765,6 +770,10 @@ const NAV_DATA = {
   'SCHD':  {2019:19.4, 2020:22.8, 2021:29.4, 2022:26.2, 2023:27.4, 2024:27.2, 2025:30.6},
   'VYM':   {2019:89.8, 2020:88.4, 2021:109.2,2022:108.6,2023:117.4,2024:128.2,2025:150.4},
   'IDV':   {2019:32.2, 2020:24.4, 2021:28.6, 2022:26.4, 2023:27.2, 2024:28.4, 2025:30.2},
+  // ── New additions ──
+  'OMAH':  {2025:19.5},                          // Launched Mar 2025; Berkshire positions + CC
+  'QQQI':  {2024:47.8, 2025:51.4},               // NEOS NASDAQ-100 High Income, launched Jan 2024
+  'BTCI':  {2024:32.0, 2025:38.5},               // ⚠️ Bitcoin-backed; NAV tracks BTC price closely
 };
 // NAV chart years
 const NAV_YEARS = [2019,2020,2021,2022,2023,2024,2025];
@@ -929,6 +938,7 @@ function filterETF(cat, btn) {
   else if(cat==='quarterly') etfData=CA_DIV_ETF.filter(f=>f.freq==='Quarterly');
   else if(cat==='high')      etfData=CA_DIV_ETF.filter(f=>f.yield>=9);
   else if(cat==='unique')    etfData=CA_DIV_ETF.filter(f=>f.divScore>=75).sort((a,b)=>b.divScore-a.divScore);
+  else if(cat==='crypto')    etfData=CA_DIV_ETF.filter(f=>f.cat==='crypto');
   renderETF();
 }
 
