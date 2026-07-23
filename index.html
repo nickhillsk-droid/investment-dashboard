@@ -645,7 +645,7 @@ tbody tr:hover{background:var(--surface-2);}
       <input class="sr-key-input" id="sr-api-key" type="password" placeholder="AIza… (free — stored for this session only)"/>
       <button class="sr-key-btn" onclick="saveApiKey()">Save</button>
       <span id="sr-key-status" class="sr-key-saved" style="display:none">✅ Key saved</span>
-      <span style="font-size:9px;color:var(--text-muted);margin-left:4px">Get free at <a href="https://aistudio.google.com/apikey" target="_blank" style="color:#059669">aistudio.google.com</a> → Get API Key → Create</span>
+      <span style="font-size:9px;color:var(--text-muted);margin-left:4px">Auto-used on engilitysolutions.com via <code>GEMINI_API_KEY</code> Vercel env var · Only needed here on standalone/GitHub Pages</span>
     </div>
   </div>
 
@@ -1175,62 +1175,54 @@ function loadChart(symbol){
 }
 
 async function callResearchAPI(ticker, exchHint){
-  const apiKey = sessionStorage.getItem('sr_api_key');
-  if(!apiKey) throw new Error('NO_KEY');
-
-  const systemPrompt = `You are an elite Wall Street investment analyst — former Goldman Sachs MD with 25 years in equity research, now running a family office. You combine DCF modelling, comparable company analysis, balance sheet forensics, technical analysis (MA, RSI, MACD, chart patterns, volume-price), and macro awareness. Your recommendations are actionable, time-bound, risk-calibrated, and focused on asymmetric risk/reward. Use Google Search to find TODAY's live price, recent news, and latest financials before forming your view.`;
-
-  const userPrompt = `Search for current market data on "${ticker}" (exchange hint: ${exchHint||'auto-detect'}, today: July 23, 2026). This is for a Canadian investor with access to US and CA markets (Wealthsimple, Questrade, Interactive Brokers).
-
-Find via search: current price, today % change, 52-week high/low, volume, market cap, P/E TTM & forward, EPS, dividend yield, beta, latest earnings result, significant news last 30 days, RSI-14, MACD signal, MA50 vs MA200, key support/resistance levels, analyst ratings & consensus.
-
-Return ONLY valid JSON — no markdown fences, no preamble, no trailing text:
-{
-  "ticker":string,"companyName":string,"exchange":string,"sector":string,"currency":"USD"or"CAD",
-  "currentPrice":number,"priceChange1D":number,"volume":string,"avgVolume30D":string,
-  "marketCap":string,"peRatioTTM":string,"forwardPE":string,"eps":string,
-  "dividendYield":string,"w52High":number,"w52Low":number,"beta":string,
-  "recommendation":"BUY"or"HOLD"or"SHORT",
-  "confidence":number,"priceTarget":number,"priceTargetUpsidePct":number,"horizon":string,
-  "technicalRating":"BULLISH"or"NEUTRAL"or"BEARISH",
-  "rsi14":number,"macdSignal":string,"maTrend":string,"supportLevel":number,"resistanceLevel":number,
-  "chartPattern":string,"volumeTrend":string,
-  "fundamentalRating":"STRONG"or"MODERATE"or"WEAK",
-  "revenueGrowth":string,"earningsGrowth":string,"grossMargin":string,
-  "debtToEquity":string,"returnOnEquity":string,"competitiveMoat":string,
-  "sectorOutlook":"POSITIVE"or"NEUTRAL"or"NEGATIVE","sectorOutlookNote":string,
-  "catalysts":[string,string,string],"keyRisks":[string,string,string],
-  "recentNews":string,"bullCase":string,"bearCase":string,
-  "executiveSummary":string,"analystConsensus":string,"lastUpdated":"Jul 23, 2026"
-}`;
-
-  // ── Gemini 2.0 Flash with Google Search grounding (free tier) ──
-  const resp = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
-    {
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({
-        systemInstruction:{parts:[{text:systemPrompt}]},
-        contents:[{role:'user',parts:[{text:userPrompt}]}],
-        tools:[{google_search:{}}],
-        generationConfig:{temperature:0.3,maxOutputTokens:2048,responseMimeType:'text/plain'}
-      })
-    }
-  );
-
-  if(!resp.ok){
-    const e=await resp.json();
-    throw new Error(e.error?.message||'Gemini API error '+resp.status);
+  // ── Parse Gemini candidates → JSON ──
+  function parseGemini(data){
+    const parts=(data.candidates?.[0]?.content?.parts||[]);
+    const text=parts.filter(p=>p.text).map(p=>p.text).join('');
+    const clean=text.replace(/```json|```/g,'').trim();
+    const match=clean.match(/\{[\s\S]*\}/);
+    if(!match) throw new Error('No JSON in response — please try again');
+    return JSON.parse(match[0]);
   }
 
-  const data=await resp.json();
-  const parts=(data.candidates?.[0]?.content?.parts||[]);
-  const text=parts.filter(p=>p.text).map(p=>p.text).join('');
-  const clean=text.replace(/```json|```/g,'').trim();
-  const match=clean.match(/\{[\s\S]*\}/);
-  if(!match) throw new Error('No JSON found in Gemini response — try again');
-  return JSON.parse(match[0]);
+  // ── Strategy 1: Server proxy at /api/research (engilitysolutions.com) ──
+  // Key lives in GEMINI_API_KEY Vercel env var — never exposed to browser
+  try {
+    const base = (window.parent!==window)
+      ? window.parent.location.origin
+      : window.location.origin;
+    const proxyResp = await fetch(`${base}/api/research`,{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({ticker, exchange:exchHint||'auto'}),
+      signal:AbortSignal.timeout(45000)
+    });
+    if(proxyResp.ok){
+      const data=await proxyResp.json();
+      if(!data.error) return parseGemini(data);
+    }
+  } catch(e){/* proxy unavailable — fall through */}
+
+  // ── Strategy 2: Direct Gemini call (GitHub Pages / standalone with user key) ──
+  const apiKey=sessionStorage.getItem('sr_api_key');
+  if(!apiKey) throw new Error('NO_KEY');
+
+  const systemPrompt=`You are an elite Wall Street investment analyst — former Goldman Sachs MD with 25 years in equity research, now running a family office. You combine DCF modelling, comparable company analysis, balance sheet forensics, technical analysis (MA, RSI, MACD, chart patterns, volume-price), and macro awareness. Your recommendations are actionable, time-bound, risk-calibrated, and focused on asymmetric risk/reward. Use Google Search to find TODAY's live price, recent news, and latest financials before forming your view.`;
+
+  const userPrompt=`Search for current market data on "${ticker}" (exchange: ${exchHint||'auto-detect'}, today: ${new Date().toLocaleDateString('en-CA',{month:'short',day:'numeric',year:'numeric'})}). Canadian investor — access to US and CA markets (Wealthsimple, Questrade, Interactive Brokers). Find via search: current price, today % change, 52W range, volume, market cap, P/E TTM & forward, EPS, dividend yield, beta, latest earnings, news last 30 days, RSI-14, MACD, MA50 vs MA200, support/resistance, analyst ratings. Return ONLY valid JSON (no markdown): {"ticker":string,"companyName":string,"exchange":string,"sector":string,"currency":"USD"or"CAD","currentPrice":number,"priceChange1D":number,"volume":string,"avgVolume30D":string,"marketCap":string,"peRatioTTM":string,"forwardPE":string,"eps":string,"dividendYield":string,"w52High":number,"w52Low":number,"beta":string,"recommendation":"BUY"or"HOLD"or"SHORT","confidence":number,"priceTarget":number,"priceTargetUpsidePct":number,"horizon":string,"technicalRating":"BULLISH"or"NEUTRAL"or"BEARISH","rsi14":number,"macdSignal":string,"maTrend":string,"supportLevel":number,"resistanceLevel":number,"chartPattern":string,"volumeTrend":string,"fundamentalRating":"STRONG"or"MODERATE"or"WEAK","revenueGrowth":string,"earningsGrowth":string,"grossMargin":string,"debtToEquity":string,"returnOnEquity":string,"competitiveMoat":string,"sectorOutlook":"POSITIVE"or"NEUTRAL"or"NEGATIVE","sectorOutlookNote":string,"catalysts":[string,string,string],"keyRisks":[string,string,string],"recentNews":string,"bullCase":string,"bearCase":string,"executiveSummary":string,"analystConsensus":string,"lastUpdated":string}`;
+
+  const resp=await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
+    {method:'POST',headers:{'Content-Type':'application/json'},
+     body:JSON.stringify({
+       systemInstruction:{parts:[{text:systemPrompt}]},
+       contents:[{role:'user',parts:[{text:userPrompt}]}],
+       tools:[{google_search:{}}],
+       generationConfig:{temperature:0.3,maxOutputTokens:2048}
+     })}
+  );
+  if(!resp.ok){const e=await resp.json();throw new Error(e.error?.message||'Gemini error '+resp.status);}
+  return parseGemini(await resp.json());
 }
 
 function ratingBadge(r){
@@ -1446,7 +1438,7 @@ async function runResearch(){
 
   } catch(err) {
     let msg = err.message==='NO_KEY'
-      ? 'No Google AI key found. Please enter your key from aistudio.google.com and click Save.'
+      ? 'No Google AI key — the server proxy is unavailable. Enter a key from aistudio.google.com or check that GEMINI_API_KEY is set in Vercel.'
       : `Research failed: ${err.message}`;
     document.getElementById('sr-result').innerHTML = `
       <div class="sr-card" style="padding:32px;text-align:center">
