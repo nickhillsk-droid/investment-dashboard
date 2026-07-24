@@ -1192,18 +1192,39 @@ async function callResearchAPI(ticker, exchHint){
 
   const userPrompt=`Search for current market data on "${ticker}" (exchange: ${exchHint||'auto-detect'}, today: ${new Date().toLocaleDateString('en-CA',{month:'short',day:'numeric',year:'numeric'})}). Canadian investor — access to US and CA markets (Wealthsimple, Questrade, Interactive Brokers). Find via search: current price, today % change, 52W range, volume, market cap, P/E TTM & forward, EPS, dividend yield, beta, latest earnings, news last 30 days, RSI-14, MACD, MA50 vs MA200, support/resistance, analyst ratings. Return ONLY valid JSON (no markdown): {"ticker":string,"companyName":string,"exchange":string,"sector":string,"currency":"USD"or"CAD","currentPrice":number,"priceChange1D":number,"volume":string,"avgVolume30D":string,"marketCap":string,"peRatioTTM":string,"forwardPE":string,"eps":string,"dividendYield":string,"w52High":number,"w52Low":number,"beta":string,"recommendation":"BUY"or"HOLD"or"SHORT","confidence":number,"priceTarget":number,"priceTargetUpsidePct":number,"horizon":string,"technicalRating":"BULLISH"or"NEUTRAL"or"BEARISH","rsi14":number,"macdSignal":string,"maTrend":string,"supportLevel":number,"resistanceLevel":number,"chartPattern":string,"volumeTrend":string,"fundamentalRating":"STRONG"or"MODERATE"or"WEAK","revenueGrowth":string,"earningsGrowth":string,"grossMargin":string,"debtToEquity":string,"returnOnEquity":string,"competitiveMoat":string,"sectorOutlook":"POSITIVE"or"NEUTRAL"or"NEGATIVE","sectorOutlookNote":string,"catalysts":[string,string,string],"keyRisks":[string,string,string],"recentNews":string,"bullCase":string,"bearCase":string,"executiveSummary":string,"analystConsensus":string,"lastUpdated":string}`;
 
-  const resp=await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
-    {method:'POST',headers:{'Content-Type':'application/json'},
-     body:JSON.stringify({
-       systemInstruction:{parts:[{text:systemPrompt}]},
-       contents:[{role:'user',parts:[{text:userPrompt}]}],
-       tools:[{google_search:{}}],
-       generationConfig:{temperature:0.3,maxOutputTokens:2048}
-     })}
-  );
-  if(!resp.ok){const e=await resp.json();throw new Error(e.error?.message||'Gemini error '+resp.status);}
-  return parseGemini(await resp.json());
+  // Model cascade — tries in order until one works for this account/region
+  const MODELS=[
+    {id:'gemini-2.0-flash-lite',   tool:{google_search:{}}},
+    {id:'gemini-2.0-flash',        tool:{google_search:{}}},
+    {id:'gemini-1.5-flash-latest', tool:{google_search_retrieval:{}}},
+    {id:'gemini-1.5-flash-001',    tool:{google_search_retrieval:{}}},
+    {id:'gemini-1.5-flash-002',    tool:{google_search_retrieval:{}}},
+  ];
+  let lastErr='No working Gemini model found for your API key region/plan';
+  for(const model of MODELS){
+    try{
+      const resp=await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${model.id}:generateContent?key=${apiKey}`,
+        {method:'POST',headers:{'Content-Type':'application/json'},
+         body:JSON.stringify({
+           systemInstruction:{parts:[{text:systemPrompt}]},
+           contents:[{role:'user',parts:[{text:userPrompt}]}],
+           tools:[model.tool],
+           generationConfig:{temperature:0.3,maxOutputTokens:2048}
+         })}
+      );
+      const data=await resp.json();
+      if(resp.ok) return parseGemini(data);
+      const status=data.error?.status||'';
+      lastErr=data.error?.message||'Error '+resp.status;
+      // Only continue cascade on quota or not-found errors
+      if(status==='RESOURCE_EXHAUSTED'||status==='NOT_FOUND'||resp.status===404||resp.status===429) continue;
+      throw new Error(lastErr);
+    }catch(e){
+      if(e.message&&!e.message.includes('fetch')) throw e; // re-throw non-network errors
+    }
+  }
+  throw new Error(lastErr);
 }
 
 function ratingBadge(r){
