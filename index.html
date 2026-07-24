@@ -1175,7 +1175,6 @@ function loadChart(symbol){
 }
 
 async function callResearchAPI(ticker, exchHint){
-  // ── Parse Gemini candidates → JSON ──
   function parseGemini(data){
     const parts=(data.candidates?.[0]?.content?.parts||[]);
     const text=parts.filter(p=>p.text).map(p=>p.text).join('');
@@ -1185,25 +1184,7 @@ async function callResearchAPI(ticker, exchHint){
     return JSON.parse(match[0]);
   }
 
-  // ── Strategy 1: Server proxy at /api/research (engilitysolutions.com) ──
-  // Key lives in GEMINI_API_KEY Vercel env var — never exposed to browser
-  try {
-    const base = (window.parent!==window)
-      ? window.parent.location.origin
-      : window.location.origin;
-    const proxyResp = await fetch(`${base}/api/research`,{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({ticker, exchange:exchHint||'auto'}),
-      signal:AbortSignal.timeout(45000)
-    });
-    if(proxyResp.ok){
-      const data=await proxyResp.json();
-      if(!data.error) return parseGemini(data);
-    }
-  } catch(e){/* proxy unavailable — fall through */}
-
-  // ── Strategy 2: Direct Gemini call (GitHub Pages / standalone with user key) ──
+  // Key is either server-vended (stored by initResearchTab) or manually entered
   const apiKey=sessionStorage.getItem('sr_api_key');
   if(!apiKey) throw new Error('NO_KEY');
 
@@ -1353,25 +1334,27 @@ async function initResearchTab(){
     const base = (window.parent !== window)
       ? window.parent.location.origin
       : window.location.origin;
-    const ping = await fetch(`${base}/api/research`, {
-      signal: AbortSignal.timeout(6000)
-    });
+    const ping = await fetch(`${base}/api/research`, { signal: AbortSignal.timeout(8000) });
     if(ping.ok){
-      // Server key is live — hide the key field entirely
-      if(keyRow)  keyRow.style.display  = 'none';
-      if(keyHint) {
-        keyHint.innerHTML = '✅ <strong>Server key active</strong> — GEMINI_API_KEY configured in Vercel · No key needed here';
-        keyHint.style.color = '#059669';
-        keyHint.style.display = 'block';
-        keyHint.style.marginTop = '6px';
+      const data = await ping.json();
+      if(data.key){
+        // Server vended the Gemini key — store it, hide the key field
+        sessionStorage.setItem('sr_api_key', data.key);
+        sessionStorage.setItem('sr_proxy','1');
+        if(keyRow)  keyRow.style.display = 'none';
+        if(keyHint){
+          keyHint.innerHTML = '✅ <strong>Server key active</strong> — ready to research any ticker';
+          keyHint.style.color = '#059669';
+          keyHint.style.display = 'block';
+          keyHint.style.marginTop = '6px';
+        }
+        return;
       }
-      sessionStorage.setItem('sr_proxy','1');
-      return;
     }
-  } catch(e){ /* proxy unreachable */ }
-  // Proxy not available — show key field
+  } catch(e){ /* server unavailable */ }
+  // No server key — show manual key field
   if(keyRow)  keyRow.style.display = 'flex';
-  if(keyHint) {
+  if(keyHint){
     keyHint.innerHTML = 'Get free key at <a href="https://aistudio.google.com/apikey" target="_blank" style="color:#059669">aistudio.google.com</a> → API Keys → Create';
     keyHint.style.color = '';
   }
@@ -1422,10 +1405,9 @@ async function runResearch(){
   const rawTicker = document.getElementById('sr-ticker').value.trim().toUpperCase();
   if(!rawTicker){alert('Please enter a ticker symbol.');return;}
 
-  const proxyReady = sessionStorage.getItem('sr_proxy') === '1';
   const apiKey = sessionStorage.getItem('sr_api_key');
-  if(!proxyReady && !apiKey){
-    alert('Enter your Google AI key from aistudio.google.com and click Save — or the server proxy at /api/research is not responding.');
+  if(!apiKey){
+    alert('No Gemini key found. On engilitysolutions.com this loads automatically — try switching to the Stock Research tab again. On standalone: enter your key from aistudio.google.com.');
     document.getElementById('sr-api-key')?.focus();
     return;
   }
@@ -1471,7 +1453,7 @@ async function runResearch(){
 
   } catch(err) {
     let msg = err.message==='NO_KEY'
-      ? 'No Google AI key — the server proxy is unavailable. Enter a key from aistudio.google.com or check that GEMINI_API_KEY is set in Vercel.'
+      ? 'Gemini key not in session — reload the Stock Research tab (it fetches the key automatically on engilitysolutions.com) or enter your key from aistudio.google.com.'
       : `Research failed: ${err.message}`;
     document.getElementById('sr-result').innerHTML = `
       <div class="sr-card" style="padding:32px;text-align:center">
